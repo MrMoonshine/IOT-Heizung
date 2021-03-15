@@ -1,5 +1,5 @@
 %Author: David Monschein
-%License: MIT
+%License: GNU GPL 3
 %2020-11-15
 
 %Masuring results
