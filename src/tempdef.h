@@ -61,8 +61,8 @@
 #define ROOFTEMP_OFFSET 4.5
 #define SOLARMODE_URL "http://alpakagott/alpakaheizung/states/solarmode"
 
-#define ANALTEMP_SOLAR_RV  4694.0
-#define ANALTEMP_SOLAR_VDD 3300.0
+//#define ANALTEMP_SOLAR_RV  4694.0
+//#define ANALTEMP_SOLAR_VDD 3300.0
 
 //Logging IDs
 #define LOG_SOLAR_ON 0

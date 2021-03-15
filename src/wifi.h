@@ -14,5 +14,5 @@
 #include "/home/david/.confidential/HomeWAP.h"
 
 esp_err_t wifiInit();
-void httptest();
+void httpGet(const char* url);
 #endif
