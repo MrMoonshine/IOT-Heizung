@@ -14,6 +14,7 @@
 #include <string.h>
 
 #include "heizung/pumpen.h"
+#include "core/timer.h"
 
 #define GPIO_ONE_WIRE TEMPERATURE_GPIO
 #define BLINK_GPIO CHIPLED
@@ -34,6 +35,10 @@ OneWireBus_ROMCode sen1romc = {
     .fields.serial_number = {0x01,0x94,0xc9,0x0b,0x00,0x00},
     .fields.crc = {0xea}
 };
+
+void oida(void *args){
+    ESP_LOGI(TAG,"Oida!\n");
+}
 
 void app_main(){
     gpio_reset_pin(BLINK_GPIO);
@@ -57,6 +62,7 @@ void app_main(){
     tempAnalogInit();
 
     wifiInit();
+    timerInit(&oida);
 
     while(1){
         //httptest();
