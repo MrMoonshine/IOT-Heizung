@@ -31,22 +31,19 @@ bool tempVerify(OneWireBus *bus,OneWireBus_ROMCode *dev){
 }
 
 esp_err_t buildsens(Temperature *tmp, const OneWireBus_ROMCode *rc, const char* name){
-    tmp->name = (char*)malloc(strlen(name));
-    if(!tmp->name)
-    return ESP_ERR_NO_MEM;
-
     strcpy(tmp->name,name);
+    printf("Initializing %s Sensor\n",tmp->name);
     tmp->romcode = rc;
-
-    tempInitSensor(
-        tmp->bus,
-        (OneWireBus_ROMCode *)tmp->romcode,
-        &tmp->info
-    );
-    
-    if(!tempVerify(tmp->bus,(OneWireBus_ROMCode *)tmp->romcode)){
+    if(
+        tempInitSensor(
+            tmp->bus,
+            (OneWireBus_ROMCode *)tmp->romcode,
+            &tmp->info
+        ) != ESP_OK
+    ){
         ESP_LOGW(OWBTAG,"Der Sensor \"%s\" konnte nicht gefunden werden!",tmp->name);
-        return ESP_ERR_NOT_FOUND;
+        return ESP_OK;
+
     }
     return ESP_OK;
 }
@@ -55,20 +52,19 @@ esp_err_t tempBuildSensPtr(OneWireBus *bus,Temperature *temps){
     for(uint8_t a = 0; a < SENSORS_TOTAL; a++){
         temps[a].bus = bus;
     }
-    Temperature* ptrt;
-    ptrt = temps;
 
-    /*ESP_ERROR_CHECK(buildsens(ptrt++,&roomrom,"room"));
-    ESP_ERROR_CHECK(buildsens(ptrt++,&redrom,"red"));
-    ESP_ERROR_CHECK(buildsens(ptrt++,&greenrom,"green"));
-    ESP_ERROR_CHECK(buildsens(ptrt++,&bluerom,"blue"));
-    ESP_ERROR_CHECK(buildsens(ptrt++,&whiterom,"white"));
-    ESP_ERROR_CHECK(buildsens(ptrt++,&yellowrom,"yellow"));
-    ESP_ERROR_CHECK(buildsens(ptrt++,&brownrom,"brown"));*/
-
-    ESP_ERROR_CHECK(buildsens(ptrt++,&debugtemp1rom,"debug1"));
-    ESP_ERROR_CHECK(buildsens(ptrt++,&debugtemp2rom,"debug2"));
+    ESP_ERROR_CHECK_WITHOUT_ABORT(buildsens(temps++,&roomrom,"room"));
+    ESP_ERROR_CHECK_WITHOUT_ABORT(buildsens(temps++,&redrom,"red"));
+    ESP_ERROR_CHECK_WITHOUT_ABORT(buildsens(temps++,&greenrom,"green"));
+    ESP_ERROR_CHECK_WITHOUT_ABORT(buildsens(temps++,&bluerom,"blue"));
+    ESP_ERROR_CHECK_WITHOUT_ABORT(buildsens(temps++,&whiterom,"white"));
+    ESP_ERROR_CHECK_WITHOUT_ABORT(buildsens(temps++,&yellowrom,"yellow"));
+    ESP_ERROR_CHECK_WITHOUT_ABORT(buildsens(temps++,&brownrom,"brown"));
     
+    ESP_ERROR_CHECK_WITHOUT_ABORT(buildsens(temps++,&debugtemp1rom,"debug1"));
+    ESP_ERROR_CHECK_WITHOUT_ABORT(buildsens(temps++,&debugtemp2rom,"debug2"));
+
+    temps -= SENSORS_TOTAL;
     return ESP_OK;
 }
 
@@ -102,14 +98,12 @@ void tempDoSettings(OneWireBus *owb){
 }
 
 esp_err_t tempInitSensor(OneWireBus *bus, OneWireBus_ROMCode *code, DS18B20_Info *info){
-    //Crashes Here
-    if(!tempVerify(bus,code))
-    return ESP_ERR_NOT_FOUND;
-
     ds18b20_init(info,bus,*code);
     ds18b20_use_crc(info, true);  //Enable CRC on all reads
-    ds18b20_set_resolution(info,DS_RESOLUTION);
-    return ESP_OK;
+    if(ds18b20_set_resolution(info,DS_RESOLUTION)){
+        return ESP_OK;
+    }    
+    return ESP_ERR_NOT_FOUND;
 }
 
 esp_err_t tempReadSensor(OneWireBus *bus, DS18B20_Info *info, float *temperature){
@@ -122,9 +116,33 @@ esp_err_t tempReadSensor(OneWireBus *bus, DS18B20_Info *info, float *temperature
     return ESP_OK;
 }
 
-esp_err_t tempReadAll(float* temps, char* url){
-    float temp = 0;
-    tempAnalogPolynom(tempGetRt(),&temp);
-    sprintf(url,"%s?solar=%.2f",TEMP_URL,temp);
+esp_err_t tempReadAll(float* temps, char* url, Temperature *sensors){  
+    char varbuff[16] = ""; 
+    strcpy(url,TEMP_URL);
+    strcat(url,"?");
+    for(uint8_t a = 0; a < SENSORS_TOTAL; a++){
+        strcat(url,sensors[a].name);
+        strcat(url,"=");
+        if(
+            tempReadSensor(
+                sensors[a].bus,
+                &sensors[a].info,
+                temps+a
+            ) == ESP_OK
+            && 
+            *(temps+a) > ZERO_KELVIN
+        ){
+            sprintf(varbuff,"%.2f",*(temps+a));
+            strcat(url,varbuff);
+        }
+
+        strcat(url,"&");
+    }
+    strcat(url,"solar=");
+    if(tempAnalogPolynom(tempGetRt(),temps+SENSORS_TOTAL) == ESP_OK){
+        sprintf(varbuff,"%.2f",*(temps+SENSORS_TOTAL));
+        strcat(url,varbuff);
+    }
+
     return ESP_OK;
 }

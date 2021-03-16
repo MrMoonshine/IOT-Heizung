@@ -11,7 +11,7 @@
     Der zustand von allen Pumpen wird im NVS flash gespeichert.
     Die Realys vom 4-Wege-Mischer werden nicht gespeichert.
 */
-typedef struct Pump{
+typedef struct{
     gpio_num_t gpio;
     int8_t mask;
 }Pumpe;
@@ -56,7 +56,7 @@ static const Pumpe warmepumpe = {
 //There are 6 Pumps in total
 static const Pumpe* allpumps[PUMPENANZAHL] = {
     &heizpumpe,
-    &heizpumpe,
+    &solarpumpe,
     &redundancy1,
     &bufferpumpe,
     &zwischenpumpe,

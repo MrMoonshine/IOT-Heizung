@@ -3,9 +3,28 @@
 #include <include/owb.h>
 #include <include/owb_rmt.h>
 #include <include/ds18b20.h>
-
-#define SENSORS_TOTAL 2
-
+/*---------------------------------------------------------*/
+/*    Positionen Fürs Temperatur Array                     */
+/*---------------------------------------------------------*/
+#define SENSORS_TOTAL 9
+#define TEMP_SOLAR SENSORS_TOTAL
+#define TEMP_ROOM   0
+#define TEMP_RED    1
+#define TEMP_GREEN  2
+#define TEMP_BLUE   3
+#define TEMP_WHITE  4
+#define TEMP_YELLOW 5
+#define TEMP_BROWN  6
+/*---------------------------------------------------------*/
+/*              Farbe zu Positionen                        */
+/*---------------------------------------------------------*/
+#define TEMP_VOLRAUF    TEMP_BLUE
+#define TEMP_RUCKLAUF   TEMP_RED
+#define TEMP_BUFFER     TEMP_WHITE
+#define TEMP_HEIZUNG    TEMP_BROWN
+/*---------------------------------------------------------*/
+/*              ROM-CODES der Sensoren                     */
+/*---------------------------------------------------------*/
 static const OneWireBus_ROMCode roomrom = {
     .fields.family = {40},
     .fields.serial_number = {157,37,201,11,0,0},

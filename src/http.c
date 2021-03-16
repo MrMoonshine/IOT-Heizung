@@ -34,7 +34,7 @@ static esp_err_t _http_event_handle(esp_http_client_event_t *evt)
     return ESP_OK;
 }
 
-void httpGet(const char* url){
+esp_err_t httpGet(const char* url){
     esp_http_client_config_t config = {
         .url = url,
         .event_handler = _http_event_handle,
@@ -53,4 +53,5 @@ void httpGet(const char* url){
     }
 
     esp_http_client_cleanup(client);
+    return err;
 }

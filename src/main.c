@@ -20,45 +20,62 @@
 #define DS18B20_ROM_CODE_LENGTH 17
 
 static const char* TAG = "Heizung";
-
-//Variables for One Wire Bus
+/*---------------------------------------------------------*/
+/*              Variables for One Wire Bus                 */
+/*---------------------------------------------------------*/
 Temperature dssensors[SENSORS_TOTAL];
 owb_rmt_driver_info rmtDriverInfo;
 OneWireBus *owb;
 //Array for all temperatures (+1 beacuse of the analog solar meassure)
 float temperatures[SENSORS_TOTAL + 1];
+/*---------------------------------------------------------*/
+/*              Variables for Pumps                        */
+/*---------------------------------------------------------*/
+int8_t statechache = 0;
 
 void heatact(void *args){
+    ESP_LOGI(TAG,"Toggle Solarpump");
+    statechache ^= solarpumpe.mask;
+    pumpsWrite(statechache);
 /*---------------------------------------------------------*/
 /*              Temperaturen Messen                        */
 /*---------------------------------------------------------*/
     ESP_LOGI(TAG,"Messungen werden durchgeführt\n");
     char url[128] = "";
-    ESP_ERROR_CHECK(tempReadAll(temperatures,url));
-    httpGet((const char*)url);
+    ESP_ERROR_CHECK_WITHOUT_ABORT(tempReadAll(temperatures,url,dssensors));
+    for(uint8_t a = 0; a < SENSORS_TOTAL + 1; a++){
+        printf("Temperature %d is: %.2f\n",a,temperatures[a]);
+    }
+/*---------------------------------------------------------*/
+/*              Temperaturen Senden                        */
+/*---------------------------------------------------------*/
+    ESP_LOGI(TAG,"Schicke alle Temperaturen zum Alpakagott");
+    esp_err_t serverConnectionEstablished = httpGet((const char*)url);
+    if(serverConnectionEstablished != ESP_OK){
+        //Ab Hier gibt es nur den Automatischen betrieb
+        ESP_LOGW(TAG,"Verbindung zum HTTP Server unmöglich");
+    }
 }
 
 void app_main(){
-    gpio_reset_pin(BLINK_GPIO);
-    /* Set the GPIO as a push/pull output */
-    gpio_set_direction(BLINK_GPIO, GPIO_MODE_OUTPUT);
     printf("\033[1;31m[E] Alpaka %d\n\033[0m",heizpumpe.gpio);
-    ESP_LOGI(TAG, "Starting One-Wire Bus...");
+    ESP_LOGI(TAG,"Starte Pumpen");
+    pumpsInit();
+    ESP_LOGI(TAG, "Starte One-Wire Bus...");
     owb = tempInitBus(GPIO_ONE_WIRE, &rmtDriverInfo);
-
+    ESP_LOGI(TAG, "One-Wire Bus wird konfiguriert...");
     tempDoSettings(owb);
+
+    ESP_LOGI(TAG, "Starte Sensoren");
     //Init All Sensors
-    ESP_ERROR_CHECK(tempBuildSensPtr(owb,dssensors));
+    ESP_ERROR_CHECK_WITHOUT_ABORT(tempBuildSensPtr(owb,dssensors));
     //Init Analog Temperature Meassurement
     tempAnalogInit();
+    ESP_LOGI(TAG, "Starte WiFi");
     wifiInit();
 
     timerInit(&heatact);
     while(1){
-        gpio_set_level(BLINK_GPIO, 0);
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-        /* Blink on (output high) */
-        gpio_set_level(BLINK_GPIO, 1);
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        //NOP
     }    
 }

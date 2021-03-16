@@ -82,7 +82,7 @@ esp_err_t wifiInit(){
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifiConfig));
-    ESP_ERROR_CHECK(esp_wifi_start());
+    ESP_ERROR_CHECK_WITHOUT_ABORT(esp_wifi_start());
 
     ESP_LOGI(PROG_NAME,"Wifi statred successfully!");
 

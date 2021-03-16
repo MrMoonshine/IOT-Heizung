@@ -16,10 +16,11 @@
 
 #define DS_RESOLUTION DS18B20_RESOLUTION_12_BIT
 #define TEMP_URL "http://alpakagott/dumpster.php"
+#define ZERO_KELVIN -273.15
 
 typedef struct{
     DS18B20_Info info;              //Actual Sensor data
-    char* name;                     //The name on the SQL database
+    char name[16];                  //The name on the SQL database
     OneWireBus *bus;                //Bus pointer
     const OneWireBus_ROMCode *romcode;    //Romcode
 } Temperature;
@@ -39,5 +40,5 @@ esp_err_t tempAnalogPolynom(int Rt,float *tempp);
 int tempGetRt();
 void tempAnalogInit();
 //Finally Read All
-esp_err_t tempReadAll(float* temps, char* url);
+esp_err_t tempReadAll(float* temps, char* url, Temperature *sensors);
 #endif
