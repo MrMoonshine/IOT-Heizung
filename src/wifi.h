@@ -15,4 +15,5 @@
 
 esp_err_t wifiInit();
 esp_err_t httpGet(const char* url);
+esp_err_t httpGetBuffer(const char* url,char* buffer, size_t buffersize);
 #endif

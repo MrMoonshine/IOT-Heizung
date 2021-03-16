@@ -18,7 +18,7 @@
 /*---------------------------------------------------------*/
 /*              Farbe zu Positionen                        */
 /*---------------------------------------------------------*/
-#define TEMP_VOLRAUF    TEMP_BLUE
+#define TEMP_VORLAUF    TEMP_BLUE
 #define TEMP_RUCKLAUF   TEMP_RED
 #define TEMP_BUFFER     TEMP_WHITE
 #define TEMP_HEIZUNG    TEMP_BROWN

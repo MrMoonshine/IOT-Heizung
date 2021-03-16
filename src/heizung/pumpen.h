@@ -17,6 +17,9 @@ typedef struct{
 }Pumpe;
 
 static const char* PUMPTAG = "Pumpensteuerung";
+//Relay boards sind invertiert
+#define PUMP_ON     0
+#define PUMP_OFF    1
 
 /*-------------Relay Board 1-------------------*/
 //Pumpe für die Heizung

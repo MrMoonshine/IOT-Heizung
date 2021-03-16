@@ -12,6 +12,7 @@
 #include "heizung/tempsensor.h"
 #include "heizung/pumpen.h"
 #include "heizung/romcodes.h"
+#include "heizung/solar.h"
 #include "core/timer.h"
 
 #define GPIO_ONE_WIRE TEMPERATURE_GPIO
@@ -33,15 +34,28 @@ float temperatures[SENSORS_TOTAL + 1];
 /*---------------------------------------------------------*/
 int8_t statechache = 0;
 
+
+/**
+ * @brief  Die Callback funktion vom Timer. Wird in einem Bestimmten Intevall immer wieder Aufgerufen.
+ *
+ * @param  args ungenutzt
+*/
 void heatact(void *args){
-    ESP_LOGI(TAG,"Toggle Solarpump");
-    statechache ^= solarpumpe.mask;
-    pumpsWrite(statechache);
+    solarIsAutomatic();
+
+    temperatures[TEMP_SOLAR] = 70;
+    temperatures[TEMP_BUFFER] = 55;
+    temperatures[TEMP_RUCKLAUF] = 50;
+    temperatures[TEMP_VORLAUF] = 60;
+    solarSetByTemp(temperatures);
 /*---------------------------------------------------------*/
 /*              Temperaturen Messen                        */
 /*---------------------------------------------------------*/
     ESP_LOGI(TAG,"Messungen werden durchgeführt\n");
     char url[128] = "";
+    //Fill the array with useless values
+    memset(temperatures, -1000, sizeof(float)*(SENSORS_TOTAL + 1));
+    /*BUS NOT INITIALIZED ERROR!*/
     ESP_ERROR_CHECK_WITHOUT_ABORT(tempReadAll(temperatures,url,dssensors));
     for(uint8_t a = 0; a < SENSORS_TOTAL + 1; a++){
         printf("Temperature %d is: %.2f\n",a,temperatures[a]);
@@ -73,9 +87,10 @@ void app_main(){
     tempAnalogInit();
     ESP_LOGI(TAG, "Starte WiFi");
     wifiInit();
-
+ 
     timerInit(&heatact);
     while(1){
-        //NOP
+        //Used to avoid watchdog errors
+        vTaskDelay(10 / portTICK_PERIOD_MS); 
     }    
 }
