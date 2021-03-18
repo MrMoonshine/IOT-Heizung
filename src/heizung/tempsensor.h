@@ -28,8 +28,6 @@ typedef struct{
 //Does an ESP error log on failure
 esp_err_t tempBuildSensPtr(OneWireBus *bus,Temperature *temps);
 bool tempVerify(OneWireBus *bus,OneWireBus_ROMCode *dev);
-//Init Bus
-OneWireBus* tempInitBus(gpio_num_t pin, owb_rmt_driver_info *rmtDriverInfo);
 //alter the settings to fit the sensors
 void tempDoSettings(OneWireBus *owb);
 //Init the sensor itself

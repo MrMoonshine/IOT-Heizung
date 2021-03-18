@@ -4,6 +4,7 @@
 #define WIFI_FAIL_BIT      BIT1
 
 static const char *PROG_NAME = "WiFi-Handler";
+static int *wifiStatusPtr = NULL;
 static EventGroupHandle_t sWifiEventGroup;
 //Setup NVS
 static void initNVS(){
@@ -26,8 +27,14 @@ static void eventHandler(
     //if wifi should start
     if(eventBase == WIFI_EVENT){
         switch(eventId){
-            case WIFI_EVENT_STA_START: esp_wifi_connect(); break;
-            case WIFI_EVENT_STA_DISCONNECTED: esp_wifi_connect(); break;
+            case WIFI_EVENT_STA_START:{
+                esp_wifi_connect();
+                *wifiStatusPtr = WIFI_INT_UP;
+            } break;
+            case WIFI_EVENT_STA_DISCONNECTED: {
+                esp_wifi_connect();
+                *wifiStatusPtr = WIFI_INT_DOWN;
+            } break;
             default: break;
         }
     }
@@ -37,11 +44,13 @@ static void eventHandler(
             ip_event_got_ip_t* event = (ip_event_got_ip_t*) eventData;
             ESP_LOGI(PROG_NAME, "got ip:" IPSTR, IP2STR(&event->ip_info.ip));
             xEventGroupSetBits(sWifiEventGroup, WIFI_CONNECTED_BIT);
+            *wifiStatusPtr = WIFI_IP_UP;
         }
     }
 }
 
 esp_err_t wifiInit(){
+    *wifiStatusPtr = WIFI_INT_DOWN;
     initNVS();
     sWifiEventGroup = xEventGroupCreate();
 
@@ -85,6 +94,13 @@ esp_err_t wifiInit(){
     ESP_ERROR_CHECK_WITHOUT_ABORT(esp_wifi_start());
 
     ESP_LOGI(PROG_NAME,"Wifi statred successfully!");
-
+    *wifiStatusPtr = WIFI_IP_UP;
     return ESP_OK;
+}
+
+int wifiStatus(){
+    if(wifiStatusPtr == NULL)
+    return WIFI_ERROR;
+    else
+    return *wifiStatusPtr;
 }

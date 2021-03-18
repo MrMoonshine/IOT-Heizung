@@ -47,8 +47,8 @@ bool solarIsAutomatic(){
     return false;
 
     ESP_LOGI(SOLARTAG,"Preferred solarmode is: %s",buffer);
-    if(strstr(buffer,"automatic") != NULL)
-    return true;
-    else
+    if(strstr(buffer,"manual") != NULL)
     return false;
+    else
+    return true;
 }

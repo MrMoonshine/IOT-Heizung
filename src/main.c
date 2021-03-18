@@ -20,6 +20,8 @@
 #define MAX_DEVICES 11
 #define DS18B20_ROM_CODE_LENGTH 17
 
+#define I_HAVE_NO_CONNECTION_TO_YOUR_ROUTER "WiFi Interface is down. IP address is unassigned."
+
 static const char* TAG = "Heizung";
 /*---------------------------------------------------------*/
 /*              Variables for One Wire Bus                 */
@@ -41,7 +43,7 @@ int8_t statechache = 0;
  * @param  args ungenutzt
 */
 void heatact(void *args){
-    solarIsAutomatic();
+    //solarIsAutomatic();
 
     temperatures[TEMP_SOLAR] = 70;
     temperatures[TEMP_BUFFER] = 55;
@@ -64,30 +66,42 @@ void heatact(void *args){
 /*              Temperaturen Senden                        */
 /*---------------------------------------------------------*/
     ESP_LOGI(TAG,"Schicke alle Temperaturen zum Alpakagott");
-    esp_err_t serverConnectionEstablished = httpGet((const char*)url);
-    if(serverConnectionEstablished != ESP_OK){
-        //Ab Hier gibt es nur den Automatischen betrieb
-        ESP_LOGW(TAG,"Verbindung zum HTTP Server unmöglich");
-    }
+    if(wifiStatus() == WIFI_IP_UP){
+       esp_err_t serverConnectionEstablished = httpGet((const char*)url);
+        if(serverConnectionEstablished != ESP_OK){
+            //Ab Hier gibt es nur den Automatischen betrieb
+            ESP_LOGW(TAG,"Verbindung zum HTTP Server unmöglich");
+        } 
+    }else{
+        ESP_LOGW(TAG,I_HAVE_NO_CONNECTION_TO_YOUR_ROUTER);
+    }    
 }
 
 void app_main(){
     printf("\033[1;31m[E] Alpaka %d\n\033[0m",heizpumpe.gpio);
     ESP_LOGI(TAG,"Starte Pumpen");
     pumpsInit();
-    ESP_LOGI(TAG, "Starte One-Wire Bus...");
-    owb = tempInitBus(GPIO_ONE_WIRE, &rmtDriverInfo);
-    ESP_LOGI(TAG, "One-Wire Bus wird konfiguriert...");
-    tempDoSettings(owb);
 
-    ESP_LOGI(TAG, "Starte Sensoren");
-    //Init All Sensors
-    ESP_ERROR_CHECK_WITHOUT_ABORT(tempBuildSensPtr(owb,dssensors));
-    //Init Analog Temperature Meassurement
-    tempAnalogInit();
     ESP_LOGI(TAG, "Starte WiFi");
     wifiInit();
  
+/*---------------------------------------------------------*/
+/*   Init all Temperature related things                   */
+/*---------------------------------------------------------*/
+    ESP_LOGI(TAG, "Starte One-Wire Bus...");
+    owb = owb_rmt_initialize(
+        &rmtDriverInfo,
+        GPIO_ONE_WIRE,
+        RMT_CHANNEL_1,
+        RMT_CHANNEL_0
+    ); 
+    ESP_LOGI(TAG, "One-Wire Bus wird konfiguriert...");
+    tempDoSettings(owb);
+    ESP_LOGI(TAG, "Starte Sensoren");
+    //Init All Sensors
+    tempBuildSensPtr(owb,dssensors);
+    //Init Analog Temperature Meassurement
+    tempAnalogInit();
     timerInit(&heatact);
     while(1){
         //Used to avoid watchdog errors

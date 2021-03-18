@@ -25,16 +25,14 @@ static const float SOLAR_TO_BUFF_OFFSET = 10;
  *
  * @param  temps Alle gemessenen Temperaturen der Sensoren
  *
- * @return
- *     - Anzahl der Berechnungen zum Aussetzen
+ * @return Anzahl der Berechnungen zum Aussetzen
 */
 uint8_t solarSetByTemp(float *temps);
 
 /**
  * @brief  Diese Funktion fragt den Server ob die Solarpumpe manuell oder automatisch gesteuert wird
  *
- * @return
- *     - false = manuell, true = automatic
+ * @return false = manuell, true = automatisch
 */
 bool solarIsAutomatic();
 #endif

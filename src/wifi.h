@@ -13,7 +13,15 @@
 //My Password Data
 #include "/home/david/.confidential/HomeWAP.h"
 
-esp_err_t wifiInit();
-esp_err_t httpGet(const char* url);
-esp_err_t httpGetBuffer(const char* url,char* buffer, size_t buffersize);
+#define WIFI_IP_UP              0
+#define WIFI_IP_UNASSIGNED      -1
+#define WIFI_INT_UP             1
+#define WIFI_INT_DOWN           2
+#define WIFI_ERROR              -2
+
+esp_err_t   wifiInit();
+int         wifiStatus();
+
+esp_err_t   httpGet(const char* url);
+esp_err_t   httpGetBuffer(const char* url,char* buffer, size_t buffersize);
 #endif

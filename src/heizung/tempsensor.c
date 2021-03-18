@@ -68,16 +68,6 @@ esp_err_t tempBuildSensPtr(OneWireBus *bus,Temperature *temps){
     return ESP_OK;
 }
 
-OneWireBus* tempInitBus(gpio_num_t pin, owb_rmt_driver_info *rmtDriverInfo){
-    //Initialize One Wire Bus
-    return owb_rmt_initialize(
-        rmtDriverInfo,
-        pin,
-        RMT_CHANNEL_1,
-        RMT_CHANNEL_0
-    ); 
-}
-
 void tempDoSettings(OneWireBus *owb){
     //Enable CRC
     owb_use_crc(owb, true);
@@ -107,11 +97,17 @@ esp_err_t tempInitSensor(OneWireBus *bus, OneWireBus_ROMCode *code, DS18B20_Info
 }
 
 esp_err_t tempReadSensor(OneWireBus *bus, DS18B20_Info *info, float *temperature){
-    ds18b20_convert_all(bus);
+    if(!bus){
+        ESP_LOGE(OWBTAG,"Bus is NULL value!");
+        return ESP_FAIL;
+    }
+    ds18b20_convert_all((const OneWireBus*)bus);
     ds18b20_wait_for_conversion(info);
 
-    if(ds18b20_read_temp(info,temperature) == DS18B20_ERROR_DEVICE)
-    return ESP_FAIL;
+    if(ds18b20_read_temp(info,temperature) == DS18B20_ERROR_DEVICE){
+        ESP_LOGW(OWBTAG,"DS18B20 Device Error");
+        return ESP_FAIL;
+    }
 
     return ESP_OK;
 }
@@ -120,7 +116,9 @@ esp_err_t tempReadAll(float* temps, char* url, Temperature *sensors){
     char varbuff[16] = ""; 
     strcpy(url,TEMP_URL);
     strcat(url,"?");
+
     for(uint8_t a = 0; a < SENSORS_TOTAL; a++){
+        ESP_LOGI(OWBTAG,"Reading temperature of: %s",sensors[a].name);
         strcat(url,sensors[a].name);
         strcat(url,"=");
         if(
