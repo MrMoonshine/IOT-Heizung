@@ -121,6 +121,7 @@ esp_err_t tempReadAll(float* temps, char* url, Temperature *sensors){
         ESP_LOGI(OWBTAG,"Reading temperature of: %s",sensors[a].name);
         strcat(url,sensors[a].name);
         strcat(url,"=");
+        //printf("URL: %s\n",url);
         if(
             tempReadSensor(
                 sensors[a].bus,

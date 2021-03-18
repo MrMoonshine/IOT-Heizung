@@ -13,7 +13,7 @@ uint8_t solarSetByTemp(float *temps){
         return blocker;
     }
 
-    //Inverted!
+    //Es ist Invertiert weil die Relays der Pumpen invertiert sind
     if(gpio_get_level(solarpumpe.gpio)){
         //Solarpump is not running at this point
         if(temps[TEMP_SOLAR] > temps[TEMP_BUFFER] + SOLAR_TO_BUFF_OFFSET){

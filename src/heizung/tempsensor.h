@@ -18,6 +18,8 @@
 #define TEMP_URL "http://alpakagott/dumpster.php"
 #define ZERO_KELVIN -273.15
 
+//Das Array Mit allen Drinnen ist ein Problemfall.
+//issue opened
 typedef struct{
     DS18B20_Info info;              //Actual Sensor data
     char name[16];                  //The name on the SQL database

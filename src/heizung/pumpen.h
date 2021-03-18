@@ -7,6 +7,7 @@
 
 #include "driver/gpio.h"
 #include "recovery.h"
+#include "../wifi.h"
 /*
     Der zustand von allen Pumpen wird im NVS flash gespeichert.
     Die Realys vom 4-Wege-Mischer werden nicht gespeichert.
@@ -65,7 +66,14 @@ static const Pumpe* allpumps[PUMPENANZAHL] = {
     &zwischenpumpe,
     &warmepumpe,
 };
+#define PUMP_SET_URL "http://alpakagott/alpakaheizung/dbsta.php"
 /*-------------Functions-------------------*/
 esp_err_t pumpsWrite(int8_t states);
 esp_err_t pumpsInit();
+/**
+ * @brief  Diese Funktion Fragt alle zuständer der Pumpen vom Webserver ab.
+ * @param solarauto ist die solarpumpe automatisch?
+ * @return zustände aller pumpen als bitmuster. oder -1 bei fehlern
+*/
+int8_t pumpsSync(bool solarauto);
 #endif

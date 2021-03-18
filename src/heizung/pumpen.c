@@ -28,3 +28,43 @@ esp_err_t pumpsWrite(int8_t states){
     }
     return ESP_OK;
 }
+
+//hilfsfunktion für pumps sync
+#define PUMPREQ2MASK_RECV_BUFFER_SIZE 64
+#define PUMPREQ2MASK_URL_BUFFER_SIZE 64
+static char urlbuff[PUMPREQ2MASK_URL_BUFFER_SIZE];
+static char recvbuff[PUMPREQ2MASK_RECV_BUFFER_SIZE];
+int8_t pumpReq2Stt(gpio_num_t pump){
+    strcpy(urlbuff,"");
+    strcpy(recvbuff,"");
+
+    sprintf(urlbuff,"%s?pump=%d",PUMP_SET_URL,pump);
+    
+
+    if(httpGetBuffer(urlbuff,recvbuff,PUMPREQ2MASK_RECV_BUFFER_SIZE) != ESP_OK)
+    return -1;
+
+    if(strstr(recvbuff,"ON") != NULL){
+        return 1; 
+    } else if(strstr(recvbuff,"OFF") != NULL){
+        return 0;
+    }
+
+    return -1;
+}
+
+int8_t pumpsSync(bool solarauto){
+    int8_t states = 0;
+    for(uint8_t a = 0; a < PUMPENANZAHL; a++){
+        if(allpumps[a]->gpio == solarpumpe.gpio && solarauto){
+            //Pumpe ist aus => 0; Pumpe ist ein => | mask
+            states |= gpio_get_level(solarpumpe.gpio) ? 0 : solarpumpe.mask;
+        }else{
+            int8_t mskt = pumpReq2Stt(allpumps[a]->gpio);
+            if(mskt < 0)
+            return mskt;
+            states |= mskt * allpumps[a]->mask;
+        }
+    }
+    return states;
+}

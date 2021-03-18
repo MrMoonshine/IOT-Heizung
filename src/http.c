@@ -103,6 +103,7 @@ esp_err_t httpGetBuffer(const char* url,char* buffer, size_t buffersize){
 
         if(HTTP_SMALL_BUFF_SIZE >= buffersize)
         strcpy(buffer,smallHttpBuff);
+        strcpy(smallHttpBuff,"");
     }
 
     esp_http_client_cleanup(client);

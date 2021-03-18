@@ -44,8 +44,9 @@ int8_t statechache = 0;
 */
 void heatact(void *args){
     ESP_LOGI(TAG,"Requesting invalid URL");
-    httpGet("fut");
-    //solarIsAutomatic();
+    
+    ESP_LOGI(TAG,"Requesting all Pumpstates");
+    printf("State is %d\n",pumpsSync(false));
 
     temperatures[TEMP_SOLAR] = 70;
     temperatures[TEMP_BUFFER] = 55;
@@ -59,6 +60,7 @@ void heatact(void *args){
     char url[128] = "";
     //Fill the array with useless values
     memset(temperatures, -1000, sizeof(float)*(SENSORS_TOTAL + 1));
+    
     /*BUS NOT INITIALIZED ERROR!*/
     ESP_ERROR_CHECK_WITHOUT_ABORT(tempReadAll(temperatures,url,dssensors));
     for(uint8_t a = 0; a < SENSORS_TOTAL + 1; a++){
@@ -104,6 +106,7 @@ void app_main(){
     tempBuildSensPtr(owb,dssensors);
     //Init Analog Temperature Meassurement
     tempAnalogInit();
+
     timerInit(&heatact);
     while(1){
         //Used to avoid watchdog errors
