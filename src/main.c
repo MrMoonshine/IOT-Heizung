@@ -43,6 +43,8 @@ int8_t statechache = 0;
  * @param  args ungenutzt
 */
 void heatact(void *args){
+    ESP_LOGI(TAG,"Requesting invalid URL");
+    httpGet("fut");
     //solarIsAutomatic();
 
     temperatures[TEMP_SOLAR] = 70;

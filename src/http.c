@@ -2,6 +2,7 @@
 
 static const char* HTTPTAG = "HTTP";
 #define HTTP_SMALL_BUFF_SIZE 64
+#define HTTP_PROTOCOL_REQ_TAG "http://"
 static char smallHttpBuff[HTTP_SMALL_BUFF_SIZE] = "";
 
 static esp_err_t _http_event_handle(esp_http_client_event_t *evt)
@@ -39,8 +40,14 @@ static esp_err_t _http_event_handle(esp_http_client_event_t *evt)
 }
 
 esp_err_t httpGet(const char* url){
-    if(strlen(url) < 1){
+    //Handle the majority of errors
+    if(strlen(url) < 1 ||
+        strncmp(url, HTTP_PROTOCOL_REQ_TAG, strlen(HTTP_PROTOCOL_REQ_TAG)) != 0
+    ){
         ESP_LOGE(HTTPTAG,"Invalid URL!");
+        return ESP_FAIL;
+    }else if(wifiStatus() != WIFI_IP_UP){
+        ESP_LOGW(HTTPTAG,"WiFi Connection Lost! No GET will be performed!");
         return ESP_FAIL;
     }
     esp_http_client_config_t config = {
@@ -65,10 +72,19 @@ esp_err_t httpGet(const char* url){
 }
 
 esp_err_t httpGetBuffer(const char* url,char* buffer, size_t buffersize){
-    if(strlen(url) < 1){
+    //Handle the majority of errors
+    if(strlen(url) < 1 ||
+        strncmp(url, HTTP_PROTOCOL_REQ_TAG, strlen(HTTP_PROTOCOL_REQ_TAG)) != 0
+    ){
         ESP_LOGE(HTTPTAG,"Invalid URL!");
         return ESP_FAIL;
+    }else if(wifiStatus() != WIFI_IP_UP){
+        ESP_LOGW(HTTPTAG,"WiFi Connection Lost! No GET will be performed!");
+        return ESP_FAIL;
     }
+    //Erase Buffer
+    strcpy(smallHttpBuff,"");
+
     esp_http_client_config_t config = {
         .url = url,
         .event_handler = _http_event_handle,
