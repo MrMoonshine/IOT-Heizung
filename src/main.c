@@ -23,12 +23,14 @@
 #define I_HAVE_NO_CONNECTION_TO_YOUR_ROUTER "WiFi Interface is down. IP address is unassigned."
 
 static const char* TAG = "Heizung";
+static char urlbuffer[128];
 /*---------------------------------------------------------*/
 /*              Variables for One Wire Bus                 */
 /*---------------------------------------------------------*/
-Temperature dssensors[SENSORS_TOTAL];
+DS18B20_Info dssensors[SENSORS_TOTAL];
 owb_rmt_driver_info rmtDriverInfo;
 OneWireBus *owb;
+static unsigned short devIniBitSeq = 0; 
 //Array for all temperatures (+1 beacuse of the analog solar meassure)
 float temperatures[SENSORS_TOTAL + 1];
 /*---------------------------------------------------------*/
@@ -43,8 +45,7 @@ int8_t statechache = 0;
  * @param  args ungenutzt
 */
 void heatact(void *args){
-    ESP_LOGI(TAG,"Requesting invalid URL");
-    
+    ESP_LOGI(TAG,"Init Debug1 Sensor");
     ESP_LOGI(TAG,"Requesting all Pumpstates");
     printf("State is %d\n",pumpsSync(false));
 
@@ -57,12 +58,11 @@ void heatact(void *args){
 /*              Temperaturen Messen                        */
 /*---------------------------------------------------------*/
     ESP_LOGI(TAG,"Messungen werden durchgeführt\n");
-    char url[128] = "";
     //Fill the array with useless values
     memset(temperatures, -1000, sizeof(float)*(SENSORS_TOTAL + 1));
     
     /*BUS NOT INITIALIZED ERROR!*/
-    ESP_ERROR_CHECK_WITHOUT_ABORT(tempReadAll(temperatures,url,dssensors));
+    ESP_ERROR_CHECK_WITHOUT_ABORT(tempReadAll(owb,dssensors,temperatures,urlbuffer,384));
     for(uint8_t a = 0; a < SENSORS_TOTAL + 1; a++){
         printf("Temperature %d is: %.2f\n",a,temperatures[a]);
     }
@@ -71,7 +71,7 @@ void heatact(void *args){
 /*---------------------------------------------------------*/
     ESP_LOGI(TAG,"Schicke alle Temperaturen zum Alpakagott");
     if(wifiStatus() == WIFI_IP_UP){
-       esp_err_t serverConnectionEstablished = httpGet((const char*)url);
+       esp_err_t serverConnectionEstablished = httpGet((const char*)urlbuffer);
         if(serverConnectionEstablished != ESP_OK){
             //Ab Hier gibt es nur den Automatischen betrieb
             ESP_LOGW(TAG,"Verbindung zum HTTP Server unmöglich");
@@ -103,13 +103,14 @@ void app_main(){
     tempDoSettings(owb);
     ESP_LOGI(TAG, "Starte Sensoren");
     //Init All Sensors
-    tempBuildSensPtr(owb,dssensors);
+    tempBuildSensPtr(owb,dssensors,&devIniBitSeq);
     //Init Analog Temperature Meassurement
     tempAnalogInit();
 
-    timerInit(&heatact);
+    //timerInit(&heatact);
     while(1){
         //Used to avoid watchdog errors
-        vTaskDelay(10 / portTICK_PERIOD_MS); 
+        vTaskDelay(1000 * TIMER_TIMEOUT_VALUE / portTICK_PERIOD_MS); 
+        heatact(NULL);
     }    
 }
