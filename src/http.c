@@ -24,9 +24,11 @@ static esp_err_t _http_event_handle(esp_http_client_event_t *evt)
         case HTTP_EVENT_ON_DATA:
             ESP_LOGD(HTTPTAG, "HTTP_EVENT_ON_DATA, len=%d", evt->data_len);
             if (!esp_http_client_is_chunked_response(evt->client)) {
-                printf("%.*s", evt->data_len, (char*)evt->data);
+                printf("%.*s\n", evt->data_len, (char*)evt->data);
                 if(evt->data_len < HTTP_SMALL_BUFF_SIZE)
                 strcpy(smallHttpBuff,(char*)evt->data);
+                else
+                strcpy(smallHttpBuff,"");
             }
             break;
         case HTTP_EVENT_ON_FINISH:
@@ -103,7 +105,7 @@ esp_err_t httpGetBuffer(const char* url,char* buffer, size_t buffersize){
 
         if(HTTP_SMALL_BUFF_SIZE >= buffersize)
         strcpy(buffer,smallHttpBuff);
-        strcpy(smallHttpBuff,"");
+        //strcpy(smallHttpBuff,"");
     }
 
     esp_http_client_cleanup(client);

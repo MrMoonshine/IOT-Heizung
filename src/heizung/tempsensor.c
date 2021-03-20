@@ -1,8 +1,32 @@
 #include "tempsensor.h"
 
 static const char* OWBTAG = "OneWireBus";
+static const char *sensornames[SENSORS_TOTAL+1] = {
+    "room",
+    "red",
+    "green",
+    "blue",
+    "white",
+    "yellow",
+    "brown",
+    "debug1",
+    "debug2",
+    "solar"
+};
 
-bool tempVerify(OneWireBus *bus,OneWireBus_ROMCode *dev){
+static const OneWireBus_ROMCode *sensorcodes[SENSORS_TOTAL] = {
+    &roomrom,
+    &redrom,
+    &greenrom,
+    &bluerom,
+    &whiterom,
+    &yellowrom,
+    &brownrom,
+    &debugtemp1rom,
+    &debugtemp2rom
+};
+
+bool tempVerify(OneWireBus *bus, OneWireBus_ROMCode *dev){
     bool isPresent = false;
     
     owb_status searchStatus = owb_verify_rom(
@@ -27,7 +51,18 @@ bool tempVerify(OneWireBus *bus,OneWireBus_ROMCode *dev){
         free(devCode);
         return false;
     }
-    return true;
+    return isPresent;
+}
+
+esp_err_t tempBuildSensPtr(OneWireBus *bus, DS18B20_Info *sensors){
+    esp_err_t ret = ESP_OK;
+    for(uint8_t a = 0; a < SENSORS_TOTAL; a++){
+        if(tempInitSensor(bus,sensorcodes[a],sensors+a) != ESP_OK){
+            ESP_LOGE(OWBTAG,"Sensor %s konnte nicht gefunden werden!",sensornames[a]);
+            ret = ESP_ERR_NOT_FOUND;
+        }
+    }
+    return ret;
 }
 
 void tempDoSettings(OneWireBus *owb){
@@ -50,9 +85,6 @@ void tempDoSettings(OneWireBus *owb){
 }
 
 esp_err_t tempInitSensor(OneWireBus *bus, OneWireBus_ROMCode *code, DS18B20_Info *info){
-    if(!tempVerify(bus,code)){
-        return ESP_FAIL;
-    }
     ds18b20_init(info,bus,*code);
     ds18b20_use_crc(info, true);  //Enable CRC on all reads
     if(ds18b20_set_resolution(info,DS_RESOLUTION)){
@@ -61,78 +93,57 @@ esp_err_t tempInitSensor(OneWireBus *bus, OneWireBus_ROMCode *code, DS18B20_Info
     return ESP_ERR_NOT_FOUND;
 }
 
-esp_err_t tempReadSensor(OneWireBus *bus, DS18B20_Info *info, float *temperature){
-    if(!bus || !info){
-        ESP_LOGE(OWBTAG,"Bus or info is NULL value!");
-        return ESP_FAIL;
+float tempReadSensor(DS18B20_Info *info){
+    float temperature = TEMPERATURE_FAIL;
+    if(!info->bus || !&info->rom_code){
+        ESP_LOGW(OWBTAG,"DS info ist NULL");
+        return temperature;
+    }else if(!tempVerify(info->bus,&info->rom_code)){
+        //ESP_LOGW(OWBTAG,"Den Sensor gibt es nicht");
+        return temperature;
     }
-    ds18b20_convert_all(bus);
+
+    ds18b20_convert_all(info->bus);
     ds18b20_wait_for_conversion(info);
-    if(ds18b20_read_temp(info,temperature) != DS18B20_OK){
-        ESP_LOGW(OWBTAG,"DS18B20 Error");
-        return ESP_FAIL;
-    }
-    return ESP_OK;
-}
-
-esp_err_t tempBuildSensPtr(OneWireBus *bus, DS18B20_Info *sensors, unsigned short *sensseq){
-    unsigned short bitseq = 0;
-    esp_err_t errs[SENSORS_TOTAL] = {
-        tempInitSensor(bus,&roomrom,sensors++),
-        tempInitSensor(bus,&redrom,sensors++),
-        tempInitSensor(bus,&greenrom,sensors++),
-        tempInitSensor(bus,&bluerom,sensors++),
-        tempInitSensor(bus,&whiterom,sensors++),
-        tempInitSensor(bus,&yellowrom,sensors++),
-        tempInitSensor(bus,&brownrom,sensors++),
-        tempInitSensor(bus,&debugtemp1rom,sensors++),
-        tempInitSensor(bus,&debugtemp2rom,sensors++)
-    };
     
-    for(uint8_t a = 0; a < SENSORS_TOTAL; a++){
-        if(errs[a] == ESP_OK)
-        bitseq |= 1 << a;
-        else
-        ESP_LOGW(OWBTAG,"OneWire Sensor \"%s\" konnte nicht gefunden werden!",sensornames[a]);
+    if(ds18b20_read_temp(info,&temperature) == DS18B20_ERROR_DEVICE){
+        ESP_LOGW(OWBTAG,"DS18B20 Device Error");
+        return TEMPERATURE_FAIL;
     }
-    sensors -= SENSORS_TOTAL;
-    *sensseq = bitseq;
-    return ESP_OK;
+
+    return temperature;
 }
 
-esp_err_t tempReadAll(OneWireBus *bus, DS18B20_Info *sensors, float *temps, char *url, unsigned short sensseq){
+esp_err_t tempReadArray(float* temps, DS18B20_Info *sensors){  
+    //Read all DS18B20 Sensors
+    for(uint8_t a = 0; a < SENSORS_TOTAL; a++){
+        //ESP_LOGI(OWBTAG,"Lese Temperatur von: %s",sensornames[a]);
+        temps[a] = tempReadSensor(sensors + a);
+    }
+
+    //Read analog sensor
+    return tempAnalogPolynom(tempGetRt(),temps+SENSORS_TOTAL);
+}
+
+esp_err_t tempArray2URL(float* temps, char* url){
+    esp_err_t ret = ESP_ERR_INVALID_RESPONSE;
     char varbuff[16] = ""; 
     strcpy(url,TEMP_URL);
     strcat(url,"?");
-    ESP_LOGI(OWBTAG,"Sensseq is %d",sensseq);
-    for(uint8_t a = 0; a < SENSORS_TOTAL; a++){
+
+    for(uint8_t a = 0; a < SENSORS_TOTAL + 1; a++){
         strcat(url,sensornames[a]);
         strcat(url,"=");
-        //printf("URL: %s\n",url);
-        if(sensseq & (1 << a)){
-            ESP_LOGI(OWBTAG,"Reading temperature of: %s",sensornames[a]);
-            if(
-                tempReadSensor(
-                    bus,
-                    sensors+a,
-                    temps+a
-                ) == ESP_OK
-                && 
-                *(temps+a) > ZERO_KELVIN
-            ){
-                sprintf(varbuff,"%.2f",*(temps+a));
-                strcat(url,varbuff);
-            }
-        }else{
-            ESP_LOGW(OWBTAG,"Sensor %s wasn't successfully initialized. ignoring device",sensornames[a]);
+        //ESP_LOGI(OWBTAG,"Writing temp %.2f",temps[a]);
+        //ESP_LOGI(OWBTAG,"URL is: %s\nLength is %d",url,strlen(url));
+        if(temps[a] > ZERO_KELVIN){
+            sprintf(varbuff,"%.2f",temps[a]);
+            strcat(url,varbuff);
+            ret = ESP_OK;
         }
+
+        if(a < SENSORS_TOTAL)
         strcat(url,"&");
     }
-    strcat(url,"solar=");
-    if(tempAnalogPolynom(tempGetRt(),temps+SENSORS_TOTAL) == ESP_OK){
-        sprintf(varbuff,"%.2f",*(temps+SENSORS_TOTAL));
-        strcat(url,varbuff);
-    }
-
-    return ESP_OK;
+    return ret;
 }

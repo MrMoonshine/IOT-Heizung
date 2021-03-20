@@ -21,6 +21,7 @@ static const char* PUMPTAG = "Pumpensteuerung";
 //Relay boards sind invertiert
 #define PUMP_ON     0
 #define PUMP_OFF    1
+#define PUMP_ERR    -1
 
 /*-------------Relay Board 1-------------------*/
 //Pumpe für die Heizung
@@ -68,12 +69,38 @@ static const Pumpe* allpumps[PUMPENANZAHL] = {
 };
 #define PUMP_SET_URL "http://alpakagott/alpakaheizung/dbsta.php"
 /*-------------Functions-------------------*/
-esp_err_t pumpsWrite(int8_t states);
 esp_err_t pumpsInit();
 /**
  * @brief  Diese Funktion Fragt alle zuständer der Pumpen vom Webserver ab.
- * @param solarauto ist die solarpumpe automatisch?
  * @return zustände aller pumpen als bitmuster. oder -1 bei fehlern
 */
-int8_t pumpsSync(bool solarauto);
+int8_t pumpsSync();
+/**
+ * @brief  Diese Funktion Fragt alle zuständer der Pumpen von den GPIO ports ab.
+ * @return zustände aller pumpen als bitmuster. oder -1 bei fehlern
+*/
+int8_t pumpsRead();
+/**
+ * @brief  Diese Funktion Speichert die Zustände der Relays im NVS (wenn notwendig)
+ * @return 
+ * - ESP_OK on success 
+ * - ESP_FAIL on error
+*/
+esp_err_t pumpsCache();
+/**
+ * @brief  Diese Funktion schreibt das bitmuster auf die GPIO pins
+ * @param[in] states Zustände der Pumpen
+ * @return 
+ * - ESP_OK on success 
+ * - ESP_FAIL on error
+*/
+esp_err_t pumpsWrite(int8_t states);
+/**
+ * @brief  Diese Funktion schreibt das bitmuster auf die GPIO pins. Ausser Solar
+ * @param[in] states Zustände der Pumpen
+ * @return 
+ * - ESP_OK on success 
+ * - ESP_FAIL on error
+*/
+esp_err_t pumpsWriteSolarIgnore(int8_t states);
 #endif

@@ -8,7 +8,7 @@ static const char* TIMERTAG = "Timer";
 //static const timer_group_t timergroup = TIMER_GROUP_0;
 //static const timer_idx_t timeridx = TIMER_0;
 
-static const unsigned int timerinterval = TIMER_TIMEOUT_VALUE;
+static const unsigned int timerinterval = 5;
 
 
 /*static void periodicTimerCallback(void* arg){

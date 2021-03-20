@@ -23,16 +23,16 @@
 #define I_HAVE_NO_CONNECTION_TO_YOUR_ROUTER "WiFi Interface is down. IP address is unassigned."
 
 static const char* TAG = "Heizung";
-static char urlbuffer[128];
 /*---------------------------------------------------------*/
 /*              Variables for One Wire Bus                 */
 /*---------------------------------------------------------*/
 DS18B20_Info dssensors[SENSORS_TOTAL];
 owb_rmt_driver_info rmtDriverInfo;
 OneWireBus *owb;
-static unsigned short devIniBitSeq = 0; 
 //Array for all temperatures (+1 beacuse of the analog solar meassure)
 float temperatures[SENSORS_TOTAL + 1];
+//Buffer for URL string
+char tempurl[256] = "";
 /*---------------------------------------------------------*/
 /*              Variables for Pumps                        */
 /*---------------------------------------------------------*/
@@ -45,49 +45,55 @@ int8_t statechache = 0;
  * @param  args ungenutzt
 */
 void heatact(void *args){
-    ESP_LOGI(TAG,"Init Debug1 Sensor");
-    ESP_LOGI(TAG,"Requesting all Pumpstates");
-    printf("State is %d\n",pumpsSync(false));
-
-    temperatures[TEMP_SOLAR] = 70;
-    temperatures[TEMP_BUFFER] = 55;
-    temperatures[TEMP_RUCKLAUF] = 50;
-    temperatures[TEMP_VORLAUF] = 60;
-    solarSetByTemp(temperatures);
 /*---------------------------------------------------------*/
 /*              Temperaturen Messen                        */
 /*---------------------------------------------------------*/
     ESP_LOGI(TAG,"Messungen werden durchgeführt\n");
     //Fill the array with useless values
     memset(temperatures, -1000, sizeof(float)*(SENSORS_TOTAL + 1));
-    
-    /*BUS NOT INITIALIZED ERROR!*/
-    ESP_ERROR_CHECK_WITHOUT_ABORT(tempReadAll(owb,dssensors,temperatures,urlbuffer,384));
-    for(uint8_t a = 0; a < SENSORS_TOTAL + 1; a++){
-        printf("Temperature %d is: %.2f\n",a,temperatures[a]);
-    }
+    ESP_ERROR_CHECK_WITHOUT_ABORT(tempReadArray(temperatures,dssensors));
 /*---------------------------------------------------------*/
 /*              Temperaturen Senden                        */
 /*---------------------------------------------------------*/
     ESP_LOGI(TAG,"Schicke alle Temperaturen zum Alpakagott");
-    if(wifiStatus() == WIFI_IP_UP){
-       esp_err_t serverConnectionEstablished = httpGet((const char*)urlbuffer);
+    if(
+        wifiStatus() == WIFI_IP_UP &&
+        tempArray2URL(temperatures,tempurl) == ESP_OK
+    ){
+        esp_err_t serverConnectionEstablished = httpGet((const char*)tempurl);
         if(serverConnectionEstablished != ESP_OK){
             //Ab Hier gibt es nur den Automatischen betrieb
             ESP_LOGW(TAG,"Verbindung zum HTTP Server unmöglich");
         } 
     }else{
         ESP_LOGW(TAG,I_HAVE_NO_CONNECTION_TO_YOUR_ROUTER);
-    }    
+    }
+/*---------------------------------------------------------*/
+/*              Pumpen                                     */
+/*---------------------------------------------------------*/
+    ESP_LOGI(TAG,"Requesting all Pumpstates");
+    solarSetByTemp(temperatures);
+    pumpsWriteSolarIgnore(pumpsSync());
+
+    pumpsCache();
 }
 
 void app_main(){
-    printf("\033[1;31m[E] Alpaka %d\n\033[0m",heizpumpe.gpio);
-    ESP_LOGI(TAG,"Starte Pumpen");
     pumpsInit();
+    ESP_LOGI(TAG,"Pumpen Gestartet");
+    printf("\033[1;31m[E] Alpaka %d\n\033[0m",heizpumpe.gpio);
 
     ESP_LOGI(TAG, "Starte WiFi");
     wifiInit();
+//Disable Mixer Relays
+    gpio_pad_select_gpio(17);
+    gpio_reset_pin(17); 
+    gpio_set_direction(17, GPIO_MODE_OUTPUT);
+    gpio_set_level(17,1);
+    gpio_pad_select_gpio(5);
+    gpio_reset_pin(5); 
+    gpio_set_direction(5, GPIO_MODE_OUTPUT);
+    gpio_set_level(5,1);
  
 /*---------------------------------------------------------*/
 /*   Init all Temperature related things                   */
@@ -103,14 +109,13 @@ void app_main(){
     tempDoSettings(owb);
     ESP_LOGI(TAG, "Starte Sensoren");
     //Init All Sensors
-    tempBuildSensPtr(owb,dssensors,&devIniBitSeq);
+    tempBuildSensPtr(owb,dssensors);
     //Init Analog Temperature Meassurement
     tempAnalogInit();
 
-    //timerInit(&heatact);
+    timerInit(&heatact);
     while(1){
         //Used to avoid watchdog errors
-        vTaskDelay(1000 * TIMER_TIMEOUT_VALUE / portTICK_PERIOD_MS); 
-        heatact(NULL);
+        vTaskDelay(10 / portTICK_PERIOD_MS); 
     }    
 }

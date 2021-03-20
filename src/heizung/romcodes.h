@@ -80,17 +80,4 @@ static const OneWireBus_ROMCode debugtemp2rom = {
     .fields.serial_number = {0x01,0x94,0xc9,0x0b,0x00,0x00},
     .fields.crc = {0xea}
 };
-
-//Array with all codes
-static const OneWireBus_ROMCode * romcodes[SENSORS_TOTAL] = {
-    &roomrom,
-    &redrom,
-    &greenrom,
-    &bluerom,
-    &whiterom,
-    &yellowrom,
-    &brownrom,
-    &debugtemp1rom,
-    &debugtemp2rom
-};
 #endif

@@ -19,6 +19,8 @@
 #define WIFI_INT_DOWN           2
 #define WIFI_ERROR              -2
 
+#define HTTP_URL_BUFF_SIZE 256
+
 esp_err_t   wifiInit();
 int         wifiStatus();
 

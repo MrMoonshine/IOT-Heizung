@@ -17,96 +17,37 @@
 #define DS_RESOLUTION DS18B20_RESOLUTION_12_BIT
 #define TEMP_URL "http://alpakagott/dumpster.php"
 #define ZERO_KELVIN -273.15
+#define TEMPERATURE_FAIL -2048
 
-//Das Array Mit allen Drinnen ist ein Problemfall.
-//issue opened
-/*typedef struct{
-    DS18B20_Info info;                      //Actual Sensor data
-    const char name[16];                  //The name on the SQL database
-    const OneWireBus_ROMCode *romcode;    //Romcode
-} Temperature;
-
-static Temperature roomTemp = {
-    .name = "room",
-    .romcode = &roomrom,
-};
-
-static Temperature redTemp = {
-    .name = "red",
-    .romcode = &redrom,
-};
-
-static Temperature greenTemp = {
-    .name = "green",
-    .romcode = &greenrom,
-};
-
-static Temperature blueTemp = {
-    .name = "blue",
-    .romcode = &bluerom,
-};
-
-static Temperature whiteTemp = {
-    .name = "white",
-    .romcode = &whiterom,
-};
-
-static Temperature yellowTemp = {
-    .name = "yellow",
-    .romcode = &yellowrom,
-};
-
-static Temperature brownTemp = {
-    .name = "brown",
-    .romcode = &brownrom,
-};
-
-static Temperature debug1Temp = {
-    .name = "debug1",
-    .romcode = &debugtemp1rom,
-};
-
-static Temperature debug2Temp = {
-    .name = "debug2",
-    .romcode = &debugtemp2rom,
-};*/
-
-static const char *sensornames[SENSORS_TOTAL + 1] = {
-    "room",
-    "red",
-    "green",
-    "blue",
-    "white",
-    "yellow",
-    "brown",
-    "debug1",
-    "debug2"
-};
-
-bool tempVerify(OneWireBus *bus,OneWireBus_ROMCode *dev);
+//Does an ESP error log on failure
+esp_err_t tempBuildSensPtr(OneWireBus *bus, DS18B20_Info *sensors);
+bool tempVerify(OneWireBus *bus, OneWireBus_ROMCode *dev);
 //alter the settings to fit the sensors
 void tempDoSettings(OneWireBus *owb);
 //Init the sensor itself
 esp_err_t tempInitSensor(OneWireBus *bus, OneWireBus_ROMCode *code, DS18B20_Info *info);
-esp_err_t tempReadSensor(OneWireBus *bus, DS18B20_Info *info, float *temperature);
 //read Analog Temperature
 esp_err_t tempAnalogPolynom(int Rt,float *tempp);
 int tempGetRt();
 void tempAnalogInit();
 /*
-    * @brief Alle Sensoren In Richtiger Reihenfolge Starten
-    * @param bus One-Wire Bus pointer
-    * @param sensors Array Aller Info-Name-Structs
-    * @return Errors wenn es welche gibt
+ * @brief Lesen der Temperatur eines Sensors
+ * @param info Der Info Struct vom Sensor
+ * @return Temperatur in °C. Bei Fehler kommt -2048°C
 */
-esp_err_t tempBuildSensPtr(OneWireBus *bus, DS18B20_Info *sensors, unsigned short *sensseq);
+float tempReadSensor(DS18B20_Info *info);
 /*
-    * @brief Alle Sensoren Lesen und als HTTP-GET Request zum server senden
-    * @param bus One-Wire Bus pointer
-    * @param sensors Array Aller Info-Name-Structs
-    * @param temps Array mit allen temperaturen
-    * @param url in diesen buffer kommt die fertige URL mit allen GET daten rein
-    * @return Errors wenn es welche gibt
+ * @brief Nutzt mehrfach die funktion tempReadSensor(). Alle werte kommen in ein float array
+ * @param temps float array. da kommen die Ergebnisse rein
+ * @param sensors Sensor infos
+ * @return ESP_OK. Ausser Solarmessung hatte fehler
 */
-esp_err_t tempReadAll(OneWireBus *bus, DS18B20_Info *sensors, float *temps, char *url, unsigned short sensseq);
+esp_err_t tempReadArray(float* temps, DS18B20_Info *sensors);
+/*
+ * @brief Baut aus einem Float array eine URL für den Webserver
+ * @param temps float array. da kommen die daten rein
+ * @param url URL buffer
+ * @return ESP_OK. Falls keine Korrekte Temperatur existiert dann ESP_
+*/
+esp_err_t tempArray2URL(float* temps, char* url);
 #endif
