@@ -25,5 +25,10 @@ esp_err_t   wifiInit();
 int         wifiStatus();
 
 esp_err_t   httpGet(const char* url);
-esp_err_t   httpGetBuffer(const char* url,char* buffer, size_t buffersize);
+/**
+ * @brief  Sended den Grund für den Reset an einen HTTP server
+ *
+ * @returns ESP_OK on success
+*/
+esp_err_t   httpResetInform();
 #endif

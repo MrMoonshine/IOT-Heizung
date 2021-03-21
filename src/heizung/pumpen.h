@@ -17,7 +17,6 @@ typedef struct{
     int8_t mask;
 }Pumpe;
 
-static const char* PUMPTAG = "Pumpensteuerung";
 //Relay boards sind invertiert
 #define PUMP_ON     0
 #define PUMP_OFF    1

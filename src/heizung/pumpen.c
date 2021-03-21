@@ -1,4 +1,5 @@
 #include "pumpen.h"
+static const char* PUMPTAG = "Pumpensteuerung";
 void initPump(const Pumpe *pump){
     gpio_pad_select_gpio(pump->gpio);
     gpio_reset_pin(pump->gpio); 
@@ -18,6 +19,8 @@ esp_err_t pumpsInit(){
 }
 
 esp_err_t pumpsWrite(int8_t states){
+    if(states < 0)
+    return ESP_FAIL;
     //printf("State is %d\nMask is %d\n",states,allpumps[1]->mask);
     for(uint8_t a = 0; a < PUMPENANZAHL; a++){
         //Die Logik Level für die Pumpen sind Invertiert

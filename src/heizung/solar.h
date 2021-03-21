@@ -17,7 +17,8 @@
 /*---------------------------------------------------------*/
 #define SOLAR_HTTP_BUFFER_SIZE 64
 #define SOLAR_HTTP_AUTO_MANUAL_URL "http://alpakagott/alpakaheizung/states/solarmode"
-static const char* SOLARTAG = "Solar";
+#define SOLAR_BLOCK_CYCLE_AFTER_ENABLE 1
+
 //Diese Differenz muss das solarpannel erreichen um die Pumpe zum einschalten
 static const float SOLAR_TO_BUFF_OFFSET = 10;
 /**

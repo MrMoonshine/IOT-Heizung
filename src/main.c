@@ -19,6 +19,7 @@
 #define BLINK_GPIO CHIPLED
 #define MAX_DEVICES 11
 #define DS18B20_ROM_CODE_LENGTH 17
+#define TEMP_SAMPLES 5
 
 #define I_HAVE_NO_CONNECTION_TO_YOUR_ROUTER "WiFi Interface is down. IP address is unassigned."
 
@@ -31,13 +32,18 @@ owb_rmt_driver_info rmtDriverInfo;
 OneWireBus *owb;
 //Array for all temperatures (+1 beacuse of the analog solar meassure)
 float temperatures[SENSORS_TOTAL + 1];
+float tempchache[TEMP_SAMPLES][SENSORS_TOTAL + 1];
+void fillTempChache(){
+    for(uint8_t a = 0; a < TEMP_SAMPLES; a++){
+        memset(tempchache[a], -1000, sizeof(float)*(SENSORS_TOTAL + 1));
+    }
+}
 //Buffer for URL string
 char tempurl[256] = "";
 /*---------------------------------------------------------*/
 /*              Variables for Pumps                        */
 /*---------------------------------------------------------*/
-int8_t statechache = 0;
-
+static uint8_t blocker = 0;         //Anzahl der Aussetzer für die Solarpumpe
 
 /**
  * @brief  Die Callback funktion vom Timer. Wird in einem Bestimmten Intevall immer wieder Aufgerufen.
@@ -72,9 +78,18 @@ void heatact(void *args){
 /*              Pumpen                                     */
 /*---------------------------------------------------------*/
     ESP_LOGI(TAG,"Requesting all Pumpstates");
-    solarSetByTemp(temperatures);
+    if(blocker == 0){
+        //Set the Solarpump according to temperatures
+        blocker = solarSetByTemp(temperatures);
+    }else{
+        blocker--;
+    }
+    
+    /*if(solarIsAutomatic())
     pumpsWriteSolarIgnore(pumpsSync());
-
+    else
+    pumpsWrite(pumpsSync());*/   
+    pumpsWrite(pumpsSync());
     pumpsCache();
 }
 
@@ -110,10 +125,13 @@ void app_main(){
     ESP_LOGI(TAG, "Starte Sensoren");
     //Init All Sensors
     tempBuildSensPtr(owb,dssensors);
+    fillTempChache();
     //Init Analog Temperature Meassurement
     tempAnalogInit();
-
     timerInit(&heatact);
+
+    //Share Reset Reason
+    httpResetInform();
     while(1){
         //Used to avoid watchdog errors
         vTaskDelay(10 / portTICK_PERIOD_MS); 
