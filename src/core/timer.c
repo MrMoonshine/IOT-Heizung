@@ -3,7 +3,7 @@
 #define TIMER_DIVIDER         16  //  Hardware timer clock divider
 #define TIMER_SCALE           (TIMER_BASE_CLK / TIMER_DIVIDER)
 
-static const char* TIMERTAG = "Timer";
+//static const char* TIMERTAG = "Timer";
 
 //static const timer_group_t timergroup = TIMER_GROUP_0;
 //static const timer_idx_t timeridx = TIMER_0;

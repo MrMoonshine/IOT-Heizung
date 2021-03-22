@@ -8,6 +8,7 @@
 #include "driver/gpio.h"
 #include "recovery.h"
 #include "../wifi.h"
+#include "webserver/URLs.h"
 /*
     Der zustand von allen Pumpen wird im NVS flash gespeichert.
     Die Realys vom 4-Wege-Mischer werden nicht gespeichert.
@@ -57,16 +58,7 @@ static const Pumpe warmepumpe = {
     .mask = 1 << 5,
 };
 #define PUMPENANZAHL 6
-//There are 6 Pumps in total
-static const Pumpe* allpumps[PUMPENANZAHL] = {
-    &heizpumpe,
-    &solarpumpe,
-    &redundancy1,
-    &bufferpumpe,
-    &zwischenpumpe,
-    &warmepumpe,
-};
-#define PUMP_SET_URL "http://alpakagott/alpakaheizung/dbsta.php"
+
 /*-------------Functions-------------------*/
 esp_err_t pumpsInit();
 /**

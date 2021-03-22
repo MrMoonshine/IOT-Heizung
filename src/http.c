@@ -69,46 +69,24 @@ esp_err_t httpGet(const char* url){
 }
 
 esp_err_t   httpResetInform(){
-    char rsturl[HTTP_URL_BUFF_SIZE] = "http://queen:8000/esp/reset/";
+    char rsturl[HTTP_URL_BUFF_SIZE] = "";
     esp_reset_reason_t reason = esp_reset_reason();
+    uint8_t rstid = 0;
     switch (reason){
-    case ESP_RST_UNKNOWN:
-        strcat(rsturl,"UNKNOWN");
-        break;
-    case ESP_RST_POWERON:
-        strcat(rsturl,"POWERON");
-        break;
-    case ESP_RST_EXT:
-        strcat(rsturl,"EXT");
-        break;
-    case ESP_RST_SW:
-        strcat(rsturl,"SW");
-        break;
-    case ESP_RST_PANIC:
-        strcat(rsturl,"PANIC");
-        break;
-    case ESP_RST_INT_WDT:
-        strcat(rsturl,"INT_WDT");
-        break;
-    case ESP_RST_TASK_WDT:
-        strcat(rsturl,"TASK_WDT");
-        break;
-    case ESP_RST_WDT:
-        strcat(rsturl,"WDT");
-        break;
-    case ESP_RST_DEEPSLEEP:
-        strcat(rsturl,"DEEPSLEEP");
-        break;
-    case ESP_RST_BROWNOUT:
-        strcat(rsturl,"BROWNOUT");
-        break;
-    case ESP_RST_SDIO:
-        strcat(rsturl,"SDIO");
-        break;
-    default:
-        return ESP_FAIL;
-        break;
+        case ESP_RST_UNKNOWN:   rstid = DB_RST_REASON_UNKNOWN;    break;
+        case ESP_RST_POWERON:   rstid = DB_RST_REASON_POWERON;    break;
+        case ESP_RST_EXT:       rstid = DB_RST_REASON_EXT;        break;
+        case ESP_RST_SW:        rstid = DB_RST_REASON_SW;         break;
+        case ESP_RST_PANIC:     rstid = DB_RST_REASON_PANIC;      break;
+        case ESP_RST_INT_WDT:   rstid = DB_RST_REASON_INT_WDT;    break;
+        case ESP_RST_TASK_WDT:  rstid = DB_RST_REASON_TASK_WDT;   break;
+        case ESP_RST_WDT:       rstid = DB_RST_REASON_WDT;        break;
+        case ESP_RST_DEEPSLEEP: rstid = DB_RST_REASON_DEEPSLEEP;  break;
+        case ESP_RST_BROWNOUT:  rstid = DB_RST_REASON_BROWNOUT;   break;
+        case ESP_RST_SDIO:      rstid = DB_RST_REASON_SDIO;       break;
+        default:                return ESP_FAIL;                  break;
     }
+    sprintf(rsturl,"%s?reset=%d",URL_LOG,rstid);
     ESP_LOGI(HTTPTAG,"Sending Reset-Information to %s",rsturl);
     return httpGet(rsturl);
 }

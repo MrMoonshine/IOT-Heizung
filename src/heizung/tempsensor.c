@@ -9,8 +9,8 @@ static const char *sensornames[SENSORS_TOTAL+1] = {
     "white",
     "yellow",
     "brown",
-    "debug1",
-    "debug2",
+    //"debug1",
+    //"debug2",
     "solar"
 };
 
@@ -22,8 +22,8 @@ static const OneWireBus_ROMCode *sensorcodes[SENSORS_TOTAL] = {
     &whiterom,
     &yellowrom,
     &brownrom,
-    &debugtemp1rom,
-    &debugtemp2rom
+    //&debugtemp1rom,
+    //&debugtemp2rom
 };
 
 bool tempVerify(OneWireBus *bus, OneWireBus_ROMCode *dev){
@@ -57,7 +57,7 @@ bool tempVerify(OneWireBus *bus, OneWireBus_ROMCode *dev){
 esp_err_t tempBuildSensPtr(OneWireBus *bus, DS18B20_Info *sensors){
     esp_err_t ret = ESP_OK;
     for(uint8_t a = 0; a < SENSORS_TOTAL; a++){
-        if(tempInitSensor(bus,sensorcodes[a],sensors+a) != ESP_OK){
+        if(tempInitSensor(bus,(OneWireBus_ROMCode *)sensorcodes[a],sensors+a) != ESP_OK){
             ESP_LOGE(OWBTAG,"Sensor %s konnte nicht gefunden werden!",sensornames[a]);
             ret = ESP_ERR_NOT_FOUND;
         }
@@ -98,7 +98,7 @@ float tempReadSensor(DS18B20_Info *info){
     if(!info->bus || !&info->rom_code){
         ESP_LOGW(OWBTAG,"DS info ist NULL");
         return temperature;
-    }else if(!tempVerify(info->bus,&info->rom_code)){
+    }else if(!tempVerify((OneWireBus*)info->bus,&info->rom_code)){
         //ESP_LOGW(OWBTAG,"Den Sensor gibt es nicht");
         return temperature;
     }
@@ -117,7 +117,6 @@ float tempReadSensor(DS18B20_Info *info){
 esp_err_t tempReadArray(float* temps, DS18B20_Info *sensors){  
     //Read all DS18B20 Sensors
     for(uint8_t a = 0; a < SENSORS_TOTAL; a++){
-        //ESP_LOGI(OWBTAG,"Lese Temperatur von: %s",sensornames[a]);
         temps[a] = tempReadSensor(sensors + a);
     }
 
@@ -128,14 +127,12 @@ esp_err_t tempReadArray(float* temps, DS18B20_Info *sensors){
 esp_err_t tempArray2URL(float* temps, char* url){
     esp_err_t ret = ESP_ERR_INVALID_RESPONSE;
     char varbuff[16] = ""; 
-    strcpy(url,TEMP_URL);
+    strcpy(url,URL_TEMPERATURES);
     strcat(url,"?");
 
     for(uint8_t a = 0; a < SENSORS_TOTAL + 1; a++){
         strcat(url,sensornames[a]);
         strcat(url,"=");
-        //ESP_LOGI(OWBTAG,"Writing temp %.2f",temps[a]);
-        //ESP_LOGI(OWBTAG,"URL is: %s\nLength is %d",url,strlen(url));
         if(temps[a] > ZERO_KELVIN){
             sprintf(varbuff,"%.2f",temps[a]);
             strcat(url,varbuff);

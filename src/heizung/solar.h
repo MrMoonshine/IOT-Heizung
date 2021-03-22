@@ -12,11 +12,11 @@
 #include "pumpen.h"
 #include "tempsensor.h"
 #include "../wifi.h"
+#include "webserver/URLs.h"
 /*---------------------------------------------------------*/
 /*              Solar Funktionen                           */
 /*---------------------------------------------------------*/
 #define SOLAR_HTTP_BUFFER_SIZE 64
-#define SOLAR_HTTP_AUTO_MANUAL_URL "http://alpakagott/alpakaheizung/states/solarmode"
 #define SOLAR_BLOCK_CYCLE_AFTER_ENABLE 1
 
 //Diese Differenz muss das solarpannel erreichen um die Pumpe zum einschalten

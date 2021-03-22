@@ -78,7 +78,7 @@ static esp_err_t _http_solar_auto_event_handle(esp_http_client_event_t *evt)
 bool solarIsAutomatic(){
     srvsolatstate = -1;
     esp_http_client_config_t config = {
-        .url = SOLAR_HTTP_AUTO_MANUAL_URL,
+        .url = URL_SOLARMODE,
         .event_handler = _http_solar_auto_event_handle,
         .port = 80
     };

@@ -54,7 +54,7 @@ void heatact(void *args){
 /*---------------------------------------------------------*/
 /*              Temperaturen Messen                        */
 /*---------------------------------------------------------*/
-    ESP_LOGI(TAG,"Messungen werden durchgeführt\n");
+    ESP_LOGI(TAG,"Messungen werden durchgeführt\nPumpStates:%d",pumpsRead());
     //Fill the array with useless values
     memset(temperatures, -1000, sizeof(float)*(SENSORS_TOTAL + 1));
     ESP_ERROR_CHECK_WITHOUT_ABORT(tempReadArray(temperatures,dssensors));
@@ -85,18 +85,18 @@ void heatact(void *args){
         blocker--;
     }
     
-    /*if(solarIsAutomatic())
+    if(solarIsAutomatic())
     pumpsWriteSolarIgnore(pumpsSync());
     else
-    pumpsWrite(pumpsSync());*/   
-    pumpsWrite(pumpsSync());
+    pumpsWrite(pumpsSync());   
+    //pumpsWrite(pumpsSync());
     pumpsCache();
 }
 
 void app_main(){
     pumpsInit();
     ESP_LOGI(TAG,"Pumpen Gestartet");
-    printf("\033[1;31m[E] Alpaka %d\n\033[0m",heizpumpe.gpio);
+    printf("\033[1;31m[E] Alpaka %d\n\033[0m",pumpsRead());
 
     ESP_LOGI(TAG, "Starte WiFi");
     wifiInit();
@@ -132,6 +132,7 @@ void app_main(){
 
     //Share Reset Reason
     httpResetInform();
+
     while(1){
         //Used to avoid watchdog errors
         vTaskDelay(10 / portTICK_PERIOD_MS); 

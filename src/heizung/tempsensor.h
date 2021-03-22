@@ -13,9 +13,9 @@
 #include "math.h"
 #include "string.h"
 #include "romcodes.h"
+#include "webserver/URLs.h"
 
 #define DS_RESOLUTION DS18B20_RESOLUTION_12_BIT
-#define TEMP_URL "http://alpakagott/dumpster.php"
 #define ZERO_KELVIN -273.15
 #define TEMPERATURE_FAIL -2048
 

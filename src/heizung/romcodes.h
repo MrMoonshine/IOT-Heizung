@@ -6,7 +6,7 @@
 /*---------------------------------------------------------*/
 /*    Positionen Fürs Temperatur Array                     */
 /*---------------------------------------------------------*/
-#define SENSORS_TOTAL 9
+#define SENSORS_TOTAL 7
 #define TEMP_SOLAR SENSORS_TOTAL
 #define TEMP_ROOM   0
 #define TEMP_RED    1

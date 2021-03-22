@@ -10,6 +10,9 @@
 #include "esp_http_client.h"
 #include <stdio.h>
 #include <string.h>
+
+#include "heizung/webserver/database.h"
+#include "heizung/webserver/URLs.h"
 //My Password Data
 #include "/home/david/.confidential/HomeWAP.h"
 

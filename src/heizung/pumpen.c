@@ -1,5 +1,15 @@
 #include "pumpen.h"
 static const char* PUMPTAG = "Pumpensteuerung";
+//There are 6 Pumps in total
+static const Pumpe* allpumps[PUMPENANZAHL] = {
+    &heizpumpe,
+    &solarpumpe,
+    &redundancy1,
+    &bufferpumpe,
+    &zwischenpumpe,
+    &warmepumpe,
+};
+
 void initPump(const Pumpe *pump){
     gpio_pad_select_gpio(pump->gpio);
     gpio_reset_pin(pump->gpio); 
@@ -7,13 +17,14 @@ void initPump(const Pumpe *pump){
 }
 
 esp_err_t pumpsInit(){
-    int8_t states = ~0;
+    int8_t states = 0xFF;
     if(recoveryStartup(&states) != ESP_OK)
     ESP_LOGW(PUMPTAG,"Zustände der Pumpen konnten nicht wieder hergestellt werden! Jetzt sind alle aus");
 
     for(uint8_t a = 0; a < PUMPENANZAHL; a++)
     initPump(allpumps[a]);
 
+    ESP_LOGI(PUMPTAG,"Initial States: %d",states);
     pumpsWrite(states);
     return ESP_OK;
 }
@@ -86,7 +97,7 @@ static char urlbuff[PUMPREQ2MASK_URL_BUFFER_SIZE];
 int8_t pumpReq2Stt(gpio_num_t pump){
     srvpumpstate = PUMP_ERR;
 
-    sprintf(urlbuff,"%s?pump=%d",PUMP_SET_URL,pump);
+    sprintf(urlbuff,"%s?pump=%d",URL_PUMPS,pump);
     ESP_LOGD(PUMPTAG,"Requesting Pumpsate of %d. (GPIO)\nURL is: %s",pump,urlbuff);
 
     esp_http_client_config_t config = {
