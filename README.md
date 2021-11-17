@@ -94,4 +94,9 @@ if(gpio_get_level(solarpumpe.gpio)){
 ```
 
 Es soll im Frontend trotzdem noch möglich sein die Solarpumpe
-manuell einzuschalten, um im Sommer das Solarpannel zu kühlen. 
+manuell einzuschalten, um im Sommer das Solarpannel zu kühlen.
+
+# Frontend
+Nicht jeder soll die Heizung Steuern dürfen. Accounts die auf die Heizung zugreifen dürfen, werden mit einem LDAP server authentifiziert.
+Der Apache Webserver authentifiziert die Nutzer mit einem OpenLDAP server, und bearbeitet mit PHP die Datenbanken.
+Das Frontend ist ein maßgeschneidertes Monitoring Tool, speziell für diesen Anwendungsfall.
