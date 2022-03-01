@@ -8,7 +8,7 @@ Tmat = [];
 
 Rplotmax = 40000;
 
-csvResult = csvread("temp.csv");
+csvResult = csvread("NTC_Messdaten.csv");
 [csvHeight,csvWidth] = size(csvResult);
 %Load CSV
 for i = 1:(csvHeight/2)
