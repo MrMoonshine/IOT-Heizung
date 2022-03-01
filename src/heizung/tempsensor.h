@@ -1,5 +1,4 @@
-#ifndef TEMPSENSOR_H_
-#define TEMPSENSOR_H_
+#pragma once
 #include <include/owb.h>
 #include <include/owb_rmt.h>
 #include <include/ds18b20.h>
@@ -27,7 +26,7 @@ void tempDoSettings(OneWireBus *owb);
 //Init the sensor itself
 esp_err_t tempInitSensor(OneWireBus *bus, OneWireBus_ROMCode *code, DS18B20_Info *info);
 //read Analog Temperature
-esp_err_t tempAnalogPolynom(int Rt,float *tempp);
+esp_err_t tempAnalogCalc(int Rt,float *tempp);
 int tempGetRt();
 void tempAnalogInit();
 /*
@@ -50,4 +49,3 @@ esp_err_t tempReadArray(float* temps, DS18B20_Info *sensors);
  * @return ESP_OK. Falls keine Korrekte Temperatur existiert dann ESP_
 */
 esp_err_t tempArray2URL(float* temps, char* url);
-#endif

@@ -1,5 +1,4 @@
-#define URL_LOG             "http://alpakagott/alpakaheizung/dbrec.php"
-//#define URL_TEMPERATURES    "http://alpakagott/dumpster.php"
-#define URL_TEMPERATURES    "http://alpakagott/alpakaheizung/dbrec.php"
-#define URL_SOLARMODE       "http://alpakagott/alpakaheizung/states/solarmode"
-#define URL_PUMPS           "http://alpakagott/alpakaheizung/dbsta.php"
+#pragma once
+#define URL_LOG             "http://alpakagott/heizung/dbrec.php"
+#define URL_TEMPERATURES    "http://alpakagott/heizung/dbrec.php"
+#define URL_PUMPS           "http://alpakagott/heizung/dbsta.php"

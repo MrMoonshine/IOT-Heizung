@@ -6,9 +6,9 @@
 #include "esp_log.h"
 
 #include "driver/gpio.h"
-#include "recovery.h"
 #include "../wifi.h"
 #include "webserver/URLs.h"
+#include <stdbool.h>
 /*
     Der zustand von allen Pumpen wird im NVS flash gespeichert.
     Die Realys vom 4-Wege-Mischer werden nicht gespeichert.
@@ -22,42 +22,8 @@ typedef struct{
 #define PUMP_ON     0
 #define PUMP_OFF    1
 #define PUMP_ERR    -1
-
-/*-------------Relay Board 1-------------------*/
-//Pumpe für die Heizung
-static const Pumpe heizpumpe = {
-    .gpio = 15,
-    .mask = 1 << 0,
-};
-//Solarpumpe
-static const Pumpe solarpumpe = {
-    .gpio = 2,
-    .mask = 1 << 1,
-};
-//Ungenutztes Relay
-static const Pumpe redundancy1 = {
-    .gpio = 4,
-    .mask = 1 << 2,
-};
-//Bufferpumpe
-static const Pumpe bufferpumpe = {
-    .gpio = 16,
-    .mask = 1 << 3,
-};
-/*-------------Relay Board 2-------------------*/
-//Mixer1
-//Mixer2
-//Zwischenpumpe
-static const Pumpe zwischenpumpe = {
-    .gpio = 18,
-    .mask = 1 << 4,
-};
-//Wärepumpe
-static const Pumpe warmepumpe = {
-    .gpio = 19,
-    .mask = 1 << 5,
-};
 #define PUMPENANZAHL 6
+#define PUMP_SOLAR_GPIO 2
 
 /*-------------Functions-------------------*/
 esp_err_t pumpsInit();
@@ -68,16 +34,9 @@ esp_err_t pumpsInit();
 int8_t pumpsSync();
 /**
  * @brief  Diese Funktion Fragt alle zuständer der Pumpen von den GPIO ports ab.
- * @return zustände aller pumpen als bitmuster. oder -1 bei fehlern
+ * @return zustände aller pumpen als bitmuster. oder -1 bei fehlern.
 */
 int8_t pumpsRead();
-/**
- * @brief  Diese Funktion Speichert die Zustände der Relays im NVS (wenn notwendig)
- * @return 
- * - ESP_OK on success 
- * - ESP_FAIL on error
-*/
-esp_err_t pumpsCache();
 /**
  * @brief  Diese Funktion schreibt das bitmuster auf die GPIO pins
  * @param[in] states Zustände der Pumpen
@@ -86,12 +45,4 @@ esp_err_t pumpsCache();
  * - ESP_FAIL on error
 */
 esp_err_t pumpsWrite(int8_t states);
-/**
- * @brief  Diese Funktion schreibt das bitmuster auf die GPIO pins. Ausser Solar
- * @param[in] states Zustände der Pumpen
- * @return 
- * - ESP_OK on success 
- * - ESP_FAIL on error
-*/
-esp_err_t pumpsWriteSolarIgnore(int8_t states);
 #endif

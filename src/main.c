@@ -77,7 +77,7 @@ void heatact(void *args){
 /*---------------------------------------------------------*/
 /*              Pumpen                                     */
 /*---------------------------------------------------------*/
-    ESP_LOGI(TAG,"Requesting all Pumpstates");
+    ESP_LOGI(TAG,"All Pumpenzustände holen...");
     if(blocker == 0){
         //Set the Solarpump according to temperatures
         blocker = solarSetByTemp(temperatures);
@@ -85,12 +85,7 @@ void heatact(void *args){
         blocker--;
     }
     
-    if(solarIsAutomatic())
-    pumpsWriteSolarIgnore(pumpsSync());
-    else
     pumpsWrite(pumpsSync());   
-    //pumpsWrite(pumpsSync());
-    pumpsCache();
 }
 
 void app_main(){
@@ -133,6 +128,10 @@ void app_main(){
     //Share Reset Reason
     httpResetInform();
 
+    //Give the Wifi some time to initialize
+    vTaskDelay(100 / portTICK_PERIOD_MS);
+    //Fetch inistial states:
+    heatact(NULL);
     while(1){
         //Used to avoid watchdog errors
         vTaskDelay(10 / portTICK_PERIOD_MS); 

@@ -50,7 +50,10 @@ esp_err_t httpGet(const char* url){
     esp_http_client_config_t config = {
         .url = url,
         .event_handler = _http_event_handle,
-        .method = HTTP_METHOD_GET
+        .method = HTTP_METHOD_GET,
+        .auth_type = HTTP_AUTH_TYPE_BASIC,
+        .username = LDAP_ESP_UID,
+        .password = LDAP_ESP_PASSWORD
     };
     
     esp_http_client_handle_t client = esp_http_client_init(&config);

@@ -1,5 +1,39 @@
 #include "pumpen.h"
 static const char* PUMPTAG = "Pumpensteuerung";
+/*-------------Relay Board 1-------------------*/
+//Pumpe für die Heizung
+static const Pumpe heizpumpe = {
+    .gpio = 15,
+    .mask = 1 << 0,
+};
+//Solarpumpe
+static const Pumpe solarpumpe = {
+    .gpio = 2,
+    .mask = 1 << 1,
+};
+//Ungenutztes Relay
+static const Pumpe redundancy1 = {
+    .gpio = 4,
+    .mask = 1 << 2,
+};
+//Bufferpumpe
+static const Pumpe bufferpumpe = {
+    .gpio = 16,
+    .mask = 1 << 3,
+};
+/*-------------Relay Board 2-------------------*/
+//Mixer1
+//Mixer2
+//Zwischenpumpe
+static const Pumpe zwischenpumpe = {
+    .gpio = 18,
+    .mask = 1 << 4,
+};
+//Wärepumpe
+static const Pumpe warmepumpe = {
+    .gpio = 19,
+    .mask = 1 << 5,
+};
 //There are 6 Pumps in total
 static const Pumpe* allpumps[PUMPENANZAHL] = {
     &heizpumpe,
@@ -17,9 +51,13 @@ void initPump(const Pumpe *pump){
 }
 
 esp_err_t pumpsInit(){
+    // Alle aus weil invertiert
     int8_t states = 0xFF;
-    if(recoveryStartup(&states) != ESP_OK)
-    ESP_LOGW(PUMPTAG,"Zustände der Pumpen konnten nicht wieder hergestellt werden! Jetzt sind alle aus");
+    // Alle standardmäßigen pumpen einschalten
+    states &= ~bufferpumpe.mask;
+    states &= ~heizpumpe.mask;
+    states &= ~warmepumpe.mask;
+    states &= ~zwischenpumpe.mask;
 
     for(uint8_t a = 0; a < PUMPENANZAHL; a++)
     initPump(allpumps[a]);
@@ -31,9 +69,13 @@ esp_err_t pumpsInit(){
 
 esp_err_t pumpsWrite(int8_t states){
     if(states < 0)
-    return ESP_FAIL;
+        return ESP_FAIL;
     //printf("State is %d\nMask is %d\n",states,allpumps[1]->mask);
+    ESP_LOGI(PUMPTAG, "Setting states to: %x\n", states);
     for(uint8_t a = 0; a < PUMPENANZAHL; a++){
+        //Solarpumpe ignorieren
+        if(a == solarpumpe.gpio)
+            continue;
         //Die Logik Level für die Pumpen sind Invertiert
         gpio_set_level(
             allpumps[a]->gpio,
@@ -41,16 +83,6 @@ esp_err_t pumpsWrite(int8_t states){
         );
     }
     return ESP_OK;
-}
-
-esp_err_t pumpsWriteSolarIgnore(int8_t states){
-    int8_t sistates = states;
-    if(gpio_get_level(solarpumpe.gpio)){
-        sistates |= solarpumpe.mask;
-    }else{
-        sistates &= ~solarpumpe.mask;
-    }
-    return pumpsWrite(sistates);
 }
 
 static int8_t srvpumpstate;
@@ -75,10 +107,15 @@ static esp_err_t _http_pump_event(esp_http_client_event_t *evt)
             ESP_LOGD(PUMPTAG, "HTTP_EVENT_ON_DATA, len=%d", evt->data_len);
             if (!esp_http_client_is_chunked_response(evt->client)) {
                 ESP_LOGD(PUMPTAG,"%.*s\n", evt->data_len, (char*)evt->data);
+                
                 if(strstr((char*)evt->data,"ON") != NULL)
                 srvpumpstate = PUMP_ON;
                 else if(strstr((char*)evt->data,"OFF") != NULL)
                 srvpumpstate = PUMP_OFF;
+                else if(strstr((char*)evt->data,"AUTO") != NULL)
+                srvpumpstate = PUMP_OFF;
+                else
+                srvpumpstate = -1;
             }
             break;
         case HTTP_EVENT_ON_FINISH:
@@ -99,11 +136,14 @@ int8_t pumpReq2Stt(gpio_num_t pump){
 
     sprintf(urlbuff,"%s?pump=%d",URL_PUMPS,pump);
     ESP_LOGD(PUMPTAG,"Requesting Pumpsate of %d. (GPIO)\nURL is: %s",pump,urlbuff);
-
+    // HTTP Config
     esp_http_client_config_t config = {
         .url = (const char*)urlbuff,
         .event_handler = _http_pump_event,
-        .port = 80
+        .method = HTTP_METHOD_GET,
+        .auth_type = HTTP_AUTH_TYPE_BASIC,
+        .username = LDAP_ESP_UID,
+        .password = LDAP_ESP_PASSWORD
     };
 
     esp_http_client_handle_t client = esp_http_client_init(&config);
@@ -119,7 +159,7 @@ int8_t pumpsSync(){
     for(uint8_t a = 0; a < PUMPENANZAHL; a++){
         int8_t mskt = pumpReq2Stt(allpumps[a]->gpio);
         if(mskt < 0)
-        return mskt;
+            return mskt;
         states |= mskt * allpumps[a]->mask;
     }
     return states;
@@ -131,20 +171,4 @@ int8_t pumpsRead(){
         states |= gpio_get_level(allpumps[a]->gpio) ? 0 : allpumps[a]->mask;
     }
     return states;
-}
-
-esp_err_t pumpsCache(){
-    int8_t states = 0, curstates = pumpsRead();
-    if(recoveryStartup(&states) != ESP_OK){
-       ESP_LOGW(PUMPTAG,"Zustände konnten nicht abgerufen werden!");
-       return ESP_FAIL; 
-    }
-
-    //ESP_LOGI(PUMPTAG,"State compare: %d\t%d",states,curstates);
-    if(states == curstates)
-    return ESP_OK;
-    
-    recoveryWrite(curstates);
-    ESP_LOGI(PUMPTAG,"States sind im NVS geschrieben: %d",curstates);
-    return ESP_OK;
 }

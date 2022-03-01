@@ -121,7 +121,7 @@ esp_err_t tempReadArray(float* temps, DS18B20_Info *sensors){
     }
 
     //Read analog sensor
-    return tempAnalogPolynom(tempGetRt(),temps+SENSORS_TOTAL);
+    return tempAnalogCalc(tempGetRt(),temps+SENSORS_TOTAL);
 }
 
 esp_err_t tempArray2URL(float* temps, char* url){
@@ -143,4 +143,70 @@ esp_err_t tempArray2URL(float* temps, char* url){
         strcat(url,"&");
     }
     return ret;
+}
+
+/*---------------------------------------
+    Analog Temperature
+---------------------------------------*/
+
+#define ANALTEMP_SOLAR_RV  4694.0
+#define ANALTEMP_SOLAR_VDD 3300.0
+
+static const adc_unit_t unit = ADC_UNIT_1;
+static const adc_atten_t atten = ADC_ATTEN_DB_11;
+static const adc_bits_width_t width = ADC_WIDTH_BIT_12;
+//GPIO 36
+static const adc_channel_t channel = ADC1_CHANNEL_0;
+static esp_adc_cal_characteristics_t *calli;
+
+static const char* TAG = "Analog Meassure";
+
+int tempGetRt(){
+    uint32_t vin = esp_adc_cal_raw_to_voltage(adc1_get_raw(channel),calli);
+    if(vin >= ANALTEMP_SOLAR_VDD)
+    return -1;
+    
+    return (float)(vin*ANALTEMP_SOLAR_RV)/(float)(ANALTEMP_SOLAR_VDD-vin);
+}
+
+void tempAnalogInit(){
+    calli = calloc(1,sizeof(esp_adc_cal_characteristics_t));
+    esp_adc_cal_characterize(
+        unit,
+        atten,
+        width,
+        1100,   //because of atten
+        calli
+    );
+
+    adc1_config_width(width);
+    adc1_config_channel_atten(channel,atten);
+}
+
+esp_err_t tempAnalogCalc(int Rt,float *tempp){
+    if(Rt < 0){
+        ESP_LOGE(TAG,"Sensor disconnected or shortcutted!");
+        return ESP_ERR_INVALID_ARG;
+    }
+    ESP_LOGI(TAG,"Rt has %d Ohms\n",Rt);
+    /*float temp = 0, r = (float)Rt;
+    temp += -1.308e-9*pow(r,3);
+    temp += 1.305e-5*pow(r,2);
+    temp += -0.049*r;
+    temp += 98.846;*/
+    const float R25 = 4530;
+    const float B = 4048.76;
+    const float k = 273.15;
+    const float T25 = 25 + k;
+
+    float p1 = log(Rt / R25) / B + 1.0f/T25;
+    if(p1 == 0){
+        ESP_LOGE(TAG,"Durch \"0\" dividiert!");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    float temp = (1.0f / p1) - k;
+    *tempp = temp;
+    ESP_LOGI(TAG,"T = %.2f °C\n",temp);
+    return ESP_OK;
 }
