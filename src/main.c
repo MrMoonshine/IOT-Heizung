@@ -125,11 +125,10 @@ void app_main(){
     tempAnalogInit();
     timerInit(&heatact);
 
+    //Give the Wifi some time to initialize
+    vTaskDelay(800 / portTICK_PERIOD_MS);
     //Share Reset Reason
     httpResetInform();
-
-    //Give the Wifi some time to initialize
-    vTaskDelay(100 / portTICK_PERIOD_MS);
     //Fetch inistial states:
     heatact(NULL);
     while(1){

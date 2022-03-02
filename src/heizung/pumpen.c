@@ -59,8 +59,10 @@ esp_err_t pumpsInit(){
     states &= ~warmepumpe.mask;
     states &= ~zwischenpumpe.mask;
 
-    for(uint8_t a = 0; a < PUMPENANZAHL; a++)
-    initPump(allpumps[a]);
+    for(uint8_t a = 0; a < PUMPENANZAHL; a++){
+        initPump(allpumps[a]);
+        gpio_set_level(allpumps[a]->gpio, PUMP_OFF);
+    }
 
     ESP_LOGI(PUMPTAG,"Initial States: %d",states);
     pumpsWrite(states);
@@ -74,8 +76,12 @@ esp_err_t pumpsWrite(int8_t states){
     ESP_LOGI(PUMPTAG, "Setting states to: %x\n", states);
     for(uint8_t a = 0; a < PUMPENANZAHL; a++){
         //Solarpumpe ignorieren
-        if(a == solarpumpe.gpio)
+        if(
+            allpumps[a]->gpio == solarpumpe.gpio ||
+            allpumps[a]->gpio == redundancy1.gpio
+        ){
             continue;
+        }
         //Die Logik Level für die Pumpen sind Invertiert
         gpio_set_level(
             allpumps[a]->gpio,
