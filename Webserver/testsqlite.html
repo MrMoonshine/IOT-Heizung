@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8">
+    <title>SQLite Test</title>
+  </head>
+  <body>
+    <header><h1>Hello</h1></header>
+    <main>
+      <script src="sql.js"></script>
+      <script>
+        config = {
+          locateFile: filename => `/dist/${filename}`
+        }
+        // The `initSqlJs` function is globally provided by all of the main dist files if loaded in the browser.
+        // We must specify this locateFile function if we are loading a wasm file from anywhere other than the current html page's folder.
+        initSqlJs(config).then(function(SQL){
+          const xhr = new XMLHttpRequest();
+          // For example: https://github.com/lerocha/chinook-database/raw/master/ChinookDatabase/DataSources/Chinook_Sqlite.sqlite
+          xhr.open('GET', 'http://alpakagott/assets/PumpenDB.sqlite3', true);
+          xhr.responseType = 'arraybuffer';
+
+          xhr.onload = e => {
+            const uInt8Array = new Uint8Array(xhr.response);
+            const db = new SQL.Database(uInt8Array);
+            const contents = db.exec("SELECT * FROM pumps");
+            console.log(contents);
+            // contents is now [{columns:['col1','col2',...], values:[[first row], [second row], ...]}]
+          };
+          xhr.send();
+        });
+      </script>
+    </main>
+    <footer>Oida</footer>
+  </body>
+</html>

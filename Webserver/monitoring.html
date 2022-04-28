@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <link rel="stylesheet" type="text/css" href="http://alpakagott/styles/universal-rounded.css">
+    <link rel="stylesheet" type="text/css" href="http://alpakagott/styles/input-rounded.css">
+    <style>
+        :root {
+            --color-main: #E15D44;
+        }
+
+        .graph {
+            background: transparent;
+            position: relative;
+            left: 1px;
+            right: 1px;
+            top: 1px;
+            bottom: 1px;
+            min-width: 95%;
+            min-height: 32rem;
+            max-height: 100%;
+        }
+    </style>
+    <link rel="stylesheet" type="text/css" href="/styles/graph.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Heizung</title>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/dygraph/2.1.0/dygraph.min.js"></script>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <h1 class="navbar-brand" href="#">Monitoring Heizung</h1>
+        <label for="navhide">Ausklappen</label>
+        <input type="checkbox" id="navhide" hidden>
+        <div class="navbar-collapse">
+            <ul>
+                <li>
+                    <a href="http://alpakagott/"><img src="http://alpakagott/assets/icon.gif" alt=""> Eingangshalle</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    <div class="dashboard">
+        <div class="widget width-full">
+            <h2 class="mainheader">Alle Temperaturmessungen</h2>
+            <h3 class="subheader">Temperaturen in °C</h3>
+            <div id="dailyGraphContainer">
+                <code id="csvBuff24" hidden></code>
+                <div class="graph" id="MainGraph" width="100%"></div>
+                <div class="d-flex">
+                    <fieldset>
+                        <legend>Solar</legend>
+                        <label class="check-container" for="7">
+                            Solar
+                            <input type="checkbox" id="7" onclick="setVisibilityG0(this)" checked>
+                            <span class="checkmark"></span>
+                        </label>
+                        <label class="check-container" for="0">
+                            Rücklauf
+                            <input type="checkbox" id="0" onclick="setVisibilityG0(this)" checked>
+                            <span class="checkmark"></span>
+                        </label>
+                        <label class="check-container" for="1">
+                            Vorlauf
+                            <input type="checkbox" id="1" onclick="setVisibilityG0(this)" checked>
+                            <span class="checkmark"></span>
+                        </label>
+                    </fieldset>
+                    <fieldset>
+                        <legend>Heizung</legend>
+                        <label class="check-container" for="4">
+                            Buffer
+                            <input type="checkbox" id="4" onclick="setVisibilityG0(this)" checked>
+                            <span class="checkmark"></span>
+                        </label>
+                        <label class="check-container" for="5">
+                            Heizung
+                            <input type="checkbox" id="5" onclick="setVisibilityG0(this)" checked>
+                            <span class="checkmark"></span>
+                        </label>
+                    </fieldset>
+                    <fieldset>
+                        <legend>Redundant</legend>
+                        <label class="check-container" for="6">
+                            Raum
+                            <input type="checkbox" id="6" onclick="setVisibilityG0(this)">
+                            <span class="checkmark"></span>
+                        </label>
+                        <label class="check-container" for="2">
+                            Grün
+                            <input type="checkbox" id="2" onclick="setVisibilityG0(this)">
+                            <span class="checkmark"></span>
+                        </label>
+                        <label class="check-container" for="3">
+                            Gelb
+                            <input type="checkbox" id="3" onclick="setVisibilityG0(this)">
+                            <span class="checkmark"></span>
+                        </label>
+                    </fieldset>
+                </div>
+                <fieldset>
+                    <legend>Zeitraum</legend>
+                    <div id="temptimesel" class="button-group">
+                        <input type="radio" id="day1" name="allduration" value=1 checked>
+                        <label class="radio-container" for="day1">24h</label>
+                        <input type="radio" id="day3" name="allduration" value=3>
+                        <label class="radio-container" for="day3">3 Tage</label>
+                        <input type="radio" id="day7" name="allduration" value=7>
+                        <label class="radio-container" for="day7">7 Tage</label>
+                    </div>
+                </fieldset>
+            </div>
+            <script>
+                document.getElementById("6").checked = false;
+                document.getElementById("2").checked = false;
+                document.getElementById("3").checked = false;
+            </script>
+            <script src="monitoring-graphs.js"></script>
+        </div>
+        <div class="widget">
+            <h3>Pumpensteuerung</h3>
+            <form id="pumpform">
+                <fieldset>
+                    <legend>Pumpen</legend>
+                    <table>
+                        <tr>
+                            <th scope="col">Schalter</th>
+                            <th scope="col">GPIO</th>
+                        </tr>
+                        <tr>
+                            <td>
+                                <label class="check-container" for="heizpumpe">
+                                    Heizpumpe
+                                    <input type="checkbox" data-toggle="toggle" data-onstyle="outline-success"
+                                        data-offstyle="outline-danger" name="heizpumpe" id="heizpumpe" value=15>
+                                    <span class="checkmark"></span>
+                                </label>
+                            </td>
+                            <td>15</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <label class="check-container" for="bufferpumpe">
+                                    Bufferpumpe
+                                    <input type="checkbox" data-toggle="toggle" data-onstyle="outline-success"
+                                        data-offstyle="outline-danger" name="bufferpumpe" id="bufferpumpe" value=16>
+                                    <span class="checkmark"></span>
+                                </label>
+                            </td>
+                            <td>16</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <label class="check-container" for="warmepumpe">
+                                    Wärmepumpe
+                                    <input type="checkbox" data-toggle="toggle" data-onstyle="outline-success"
+                                        data-offstyle="outline-danger" name="warmepumpe" id="warmepumpe" value=18>
+                                    <span class="checkmark"></span>
+                                </label></td>
+                            <td>19 & 18</td>
+                        </tr>
+                    </table>
+                </fieldset>
+                <fieldset>
+                    <legend>Solarpumpe</legend>
+                    <table class="table table-striped table-dark">
+                        <thead class="thead-dark">
+                            <tr>
+                                <th scope="col">Schalter</th>
+                                <th scope="col">GPIO</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <label class="check-container" for="autosolar">
+                                        Automatische Solarpumpe
+                                        <input type="checkbox" data-toggle="toggle" data-onstyle="outline-success"
+                                            data-offstyle="outline-danger" name="autosolar" id="autosolar" checked>
+                                        <span class="checkmark"></span>
+                                    </label>
+                                </td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <label class="check-container" for="solarpumpe">
+                                        Solarpumpe
+                                        <input type="checkbox" data-toggle="toggle" data-onstyle="outline-success"
+                                            data-offstyle="outline-danger" name="solarpumpe" id="solarpumpe" value=2>
+                                        <span class="checkmark"></span>
+                                    </label></td>
+                                <td>2</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </fieldset>
+                <button id="pumpform-submit" type="submit" class="btn btn-primary btn-danger">Bestätigen</button>
+            </form>
+            <script src="pumps.js"></script>
+        </div>
+        <article class="widget">
+            <h3>Temperaturdatenbank Ausräumen</h3>
+            <p>Alle daten die älter als eine woche sind löschen:</p>
+            <a href="dbsta.php?clean=">
+                <button class="actor">Ausräumen</button>
+            </a>
+        </article>
+    </div>
+</body>
+
+</html>
