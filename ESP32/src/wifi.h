@@ -11,27 +11,11 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "heizung/webserver/database.h"
-#include "heizung/webserver/URLs.h"
 //My Password Data
-#include "/home/david/.confidential/HomeWAP.h"
+#include "/home/david/.secrets/WLAN.h"
 
-#define WIFI_IP_UP              0
-#define WIFI_IP_UNASSIGNED      -1
-#define WIFI_INT_UP             1
-#define WIFI_INT_DOWN           2
-#define WIFI_ERROR              -2
-
-#define HTTP_URL_BUFF_SIZE 256
+#define WIFI_MAXIMUM_RETRY 12
 
 esp_err_t   wifiInit();
-int         wifiStatus();
 
-esp_err_t   httpGet(const char* url);
-/**
- * @brief  Sended den Grund für den Reset an einen HTTP server
- *
- * @returns ESP_OK on success
-*/
-esp_err_t   httpResetInform();
 #endif
