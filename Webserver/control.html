@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <link rel="stylesheet" type="text/css" href="styles/universal-rounded.css">
+    <link rel="stylesheet" type="text/css" href="styles/input-rounded.css">
+    <link rel="stylesheet" type="text/css" href="/styles/graph.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Heizung</title>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <h1 class="navbar-brand" href="#">Monitoring Heizung</h1>
+        <label for="navhide">Ausklappen</label>
+        <input type="checkbox" id="navhide" hidden>
+        <div class="navbar-collapse">
+            <ul>
+                <li>
+                    <a href="monitoring.html">Monitoring</a>
+                </li>
+                <li>
+                    <a href="/"><img src="http://alpakagott/assets/icon.gif" alt=""> Eingangshalle</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    <div class="dashboard">
+        <div class="widget">
+            <h3>Pumpensteuerung</h3>
+            <form id="pumpform">
+                <fieldset>
+                    <legend>Pumpen</legend>
+                    <table>
+                        <tr>
+                            <th scope="col">Schalter</th>
+                            <th scope="col">GPIO</th>
+                        </tr>
+                        <tr>
+                            <td>
+                                <label class="check-container" for="heizpumpe">
+                                    Heizpumpe
+                                    <input type="checkbox" data-toggle="toggle" data-onstyle="outline-success"
+                                        data-offstyle="outline-danger" name="heizpumpe" id="heizpumpe" value=15>
+                                    <span class="checkmark"></span>
+                                </label>
+                            </td>
+                            <td>15</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <label class="check-container" for="bufferpumpe">
+                                    Bufferpumpe
+                                    <input type="checkbox" data-toggle="toggle" data-onstyle="outline-success"
+                                        data-offstyle="outline-danger" name="bufferpumpe" id="bufferpumpe" value=16>
+                                    <span class="checkmark"></span>
+                                </label>
+                            </td>
+                            <td>16</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <label class="check-container" for="warmepumpe">
+                                    Wärmepumpe
+                                    <input type="checkbox" data-toggle="toggle" data-onstyle="outline-success"
+                                        data-offstyle="outline-danger" name="warmepumpe" id="warmepumpe" value=18>
+                                    <span class="checkmark"></span>
+                                </label></td>
+                            <td>19 & 18</td>
+                        </tr>
+                    </table>
+                </fieldset>
+                <fieldset>
+                    <legend>Solarpumpe</legend>
+                    <table class="table table-striped table-dark">
+                        <thead class="thead-dark">
+                            <tr>
+                                <th scope="col">Schalter</th>
+                                <th scope="col">GPIO</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <label class="check-container" for="autosolar">
+                                        Automatische Solarpumpe
+                                        <input type="checkbox" data-toggle="toggle" data-onstyle="outline-success"
+                                            data-offstyle="outline-danger" name="autosolar" id="autosolar" checked>
+                                        <span class="checkmark"></span>
+                                    </label>
+                                </td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <label class="check-container" for="solarpumpe">
+                                        Solarpumpe
+                                        <input type="checkbox" data-toggle="toggle" data-onstyle="outline-success"
+                                            data-offstyle="outline-danger" name="solarpumpe" id="solarpumpe" value=2>
+                                        <span class="checkmark"></span>
+                                    </label></td>
+                                <td>2</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </fieldset>
+                <button id="pumpform-submit" type="submit" class="btn btn-primary btn-danger">Bestätigen</button>
+            </form>
+            <script src="pumps.js"></script>
+        </div>
+        <article class="widget">
+            <h3>Temperaturdatenbank Ausräumen</h3>
+            <p>Alle daten die älter als eine woche sind löschen:</p>
+            <a href="dbsta.php?clean=">
+                <button class="actor">Ausräumen</button>
+            </a>
+        </article>
+    </div>
+</body>
+
+</html>
