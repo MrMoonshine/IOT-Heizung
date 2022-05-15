@@ -99,9 +99,9 @@ esp_err_t pumpsWrite(pump_states_t states){
         //Die Logik Level für die Pumpen sind Invertiert
         gpio_set_level(
             allpumps[a]->gpio,
-            allpumps[a]->mask & states ? PUMP_OFF : PUMP_ON
+            allpumps[a]->mask & states ? PUMP_ON : PUMP_OFF
         );
-        //ESP_LOGI(PUMPTAG, "%s ist jetzt %s", allpumps[a]->name, allpumps[a]->mask & states ? "Ein" : "Aus");
+        ESP_LOGI(PUMPTAG, "%s ist jetzt %s", allpumps[a]->name, allpumps[a]->mask & states ? "Ein" : "Aus");
     }
     return ESP_OK;
 }

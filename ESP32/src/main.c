@@ -71,6 +71,8 @@ void heatact(void *args){
     }else{
         blocker--;
     }
+    
+    pumpsWrite(pumpsDefault());
 }
 /*
 ,---.    ,---.     .---.  _______ 
