@@ -124,27 +124,6 @@ esp_err_t tempReadArray(float* temps, DS18B20_Info *sensors){
     return tempAnalogCalc(tempGetRt(),temps+SENSORS_TOTAL);
 }
 
-esp_err_t tempArray2URL(float* temps, char* url){
-    esp_err_t ret = ESP_ERR_INVALID_RESPONSE;
-    char varbuff[16] = ""; 
-    strcpy(url,URL_TEMPERATURES);
-    strcat(url,"?");
-
-    for(uint8_t a = 0; a < SENSORS_TOTAL + 1; a++){
-        strcat(url,sensornames[a]);
-        strcat(url,"=");
-        if(temps[a] > ZERO_KELVIN){
-            sprintf(varbuff,"%.2f",temps[a]);
-            strcat(url,varbuff);
-            ret = ESP_OK;
-        }
-
-        if(a < SENSORS_TOTAL)
-        strcat(url,"&");
-    }
-    return ret;
-}
-
 /*---------------------------------------
     Analog Temperature
 ---------------------------------------*/

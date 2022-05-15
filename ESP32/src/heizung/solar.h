@@ -12,7 +12,6 @@
 #include "pumpen.h"
 #include "tempsensor.h"
 #include "../wifi.h"
-#include "webserver/URLs.h"
 /*---------------------------------------------------------*/
 /*              Solar Funktionen                           */
 /*---------------------------------------------------------*/
