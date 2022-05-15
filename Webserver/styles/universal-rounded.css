@@ -1,9 +1,10 @@
 :root {
-    --color-main: rgb(221, 59, 30);
-    --color-background-2: #efefef;
-    --color-background-1: #dfdfdf;
+    --color-main: rgb(235, 180, 0);
+    --coloe-main-shaded: rgb(215, 160, 0);
+    --color-background-2: #222222;
+    --color-background-1: #333333;
     --color-background-translucent: rgba(34, 34, 34, .7);
-    --color-text: black;
+    --color-text: white;
     --color-text-button: white;
     --color-widget-border: lightgray;
 }
@@ -19,11 +20,7 @@ body{
     font-family: Arial, Helvetica, sans-serif;
     color: var(--color-text);
 
-    background-repeat: no-repeat;
-    background-position: 50% 0%;
-    background-attachment: fixed;
-    background-size: cover;
-    background-image: linear-gradient(to top, #cfd9df 0%, #e2ebf0 100%);
+    background-color: #111111;
 }
 
 nav {
@@ -134,22 +131,17 @@ nav form button{
 }
 
 table{
-    border: none;
-    border-bottom: var(--color-main) 4px double;
+    border: 1px solid var(--color-main);
     border-collapse: collapse;
 
     width: 100%;
-    table-layout: fixed;
+    table-layout: auto;
 }
 
 th {
-    background-color: var(--color-main);
-    border: none;
-    border-top: var(--color-main) 4px double;
-    border-bottom: var(--color-main) 4px double;
-    background-clip: padding-box;
-
     color: var(--color-text);
+    background-color: var(--color-main);
+    border-top: none;
     text-align: left;
     padding: 0.1rem 2rem 0.1rem 2rem;
 }
@@ -157,6 +149,10 @@ th {
 td {
     text-align: left;
     padding: 0.1rem 1rem 0.1rem 1rem;
+}
+
+td:first-child, th:first-child {
+    border-left: none;
 }
 
 tr:nth-child(even) {
@@ -180,7 +176,7 @@ tr:nth-child(odd) {
     padding: 0.6rem;
     margin: 0.5rem;
     color: var(--color-text);
-    flex-basis: 30%;
+    flex-basis: 40%;
     flex-grow: 1;
     box-shadow: 2px 2px 4px black;
 }
