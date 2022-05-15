@@ -10,9 +10,7 @@
 #include "esp_system.h"
 #include "esp_log.h"
 #include "math.h"
-#include "string.h"
 #include "romcodes.h"
-#include "webserver/URLs.h"
 
 #define DS_RESOLUTION DS18B20_RESOLUTION_12_BIT
 #define ZERO_KELVIN -273.15
@@ -42,10 +40,3 @@ float tempReadSensor(DS18B20_Info *info);
  * @return ESP_OK. Ausser Solarmessung hatte fehler
 */
 esp_err_t tempReadArray(float* temps, DS18B20_Info *sensors);
-/*
- * @brief Baut aus einem Float array eine URL für den Webserver
- * @param temps float array. da kommen die daten rein
- * @param url URL buffer
- * @return ESP_OK. Falls keine Korrekte Temperatur existiert dann ESP_
-*/
-esp_err_t tempArray2URL(float* temps, char* url);

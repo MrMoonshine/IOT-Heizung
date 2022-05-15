@@ -7,15 +7,17 @@
 
 #include "driver/gpio.h"
 #include "../wifi.h"
-#include "webserver/URLs.h"
 #include <stdbool.h>
+#include <rest.h>
+typedef int8_t pump_states_t;
 /*
     Der zustand von allen Pumpen wird im NVS flash gespeichert.
     Die Realys vom 4-Wege-Mischer werden nicht gespeichert.
 */
 typedef struct{
+    const char name[24];
     gpio_num_t gpio;
-    int8_t mask;
+    pump_states_t mask;
 }Pumpe;
 
 //Relay boards sind invertiert
@@ -28,15 +30,15 @@ typedef struct{
 /*-------------Functions-------------------*/
 esp_err_t pumpsInit();
 /**
- * @brief  Diese Funktion Fragt alle zuständer der Pumpen vom Webserver ab.
- * @return zustände aller pumpen als bitmuster. oder -1 bei fehlern
-*/
-int8_t pumpsSync();
-/**
  * @brief  Diese Funktion Fragt alle zuständer der Pumpen von den GPIO ports ab.
  * @return zustände aller pumpen als bitmuster. oder -1 bei fehlern.
 */
-int8_t pumpsRead();
+pump_states_t pumpsRead();
+/**
+ * @brief  Ausgangszustände der Pumpen. (für restart).
+ * @return zustände aller pumpen als bitmuster. oder -1 bei fehlern.
+*/
+pump_states_t pumpsDefault();
 /**
  * @brief  Diese Funktion schreibt das bitmuster auf die GPIO pins
  * @param[in] states Zustände der Pumpen
@@ -44,5 +46,10 @@ int8_t pumpsRead();
  * - ESP_OK on success 
  * - ESP_FAIL on error
 */
-esp_err_t pumpsWrite(int8_t states);
+esp_err_t pumpsWrite(pump_states_t states);
+/*
+    @brief API Resource um Pumpen zu Steuern
+    @param[in] req HTTP request
+*/
+esp_err_t heizung_api_pumps(httpd_req_t *req);
 #endif

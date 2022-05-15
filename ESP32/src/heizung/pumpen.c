@@ -1,23 +1,30 @@
 #include "pumpen.h"
+
+extern rest_user_t *rest_api_users;
+
 static const char* PUMPTAG = "Pumpensteuerung";
 /*-------------Relay Board 1-------------------*/
 //Pumpe für die Heizung
 static const Pumpe heizpumpe = {
+    .name = "heizpumpe",
     .gpio = 15,
     .mask = 1 << 0,
 };
 //Solarpumpe
 static const Pumpe solarpumpe = {
+    .name = "solarpumpe",
     .gpio = 2,
     .mask = 1 << 1,
 };
 //Ungenutztes Relay
 static const Pumpe redundancy1 = {
+    .name = "unbenutzt1",
     .gpio = 4,
     .mask = 1 << 2,
 };
 //Bufferpumpe
 static const Pumpe bufferpumpe = {
+    .name = "bufferpumpe",
     .gpio = 16,
     .mask = 1 << 3,
 };
@@ -26,11 +33,13 @@ static const Pumpe bufferpumpe = {
 //Mixer2
 //Zwischenpumpe
 static const Pumpe zwischenpumpe = {
+    .name = "zwischenpumpe",
     .gpio = 18,
     .mask = 1 << 4,
 };
 //Wärepumpe
 static const Pumpe warmepumpe = {
+    .name = "waermepumpe",
     .gpio = 19,
     .mask = 1 << 5,
 };
@@ -44,7 +53,7 @@ static const Pumpe* allpumps[PUMPENANZAHL] = {
     &warmepumpe,
 };
 
-void initPump(const Pumpe *pump){
+static void initPump(const Pumpe *pump){
     gpio_pad_select_gpio(pump->gpio);
     gpio_reset_pin(pump->gpio); 
     gpio_set_direction(pump->gpio, GPIO_MODE_INPUT_OUTPUT);
@@ -69,7 +78,11 @@ esp_err_t pumpsInit(){
     return ESP_OK;
 }
 
-esp_err_t pumpsWrite(int8_t states){
+pump_states_t pumpsDefault(){
+    return (0 | bufferpumpe.mask | heizpumpe.mask | zwischenpumpe.mask | warmepumpe.mask);
+}
+
+esp_err_t pumpsWrite(pump_states_t states){
     if(states < 0)
         return ESP_FAIL;
     //printf("State is %d\nMask is %d\n",states,allpumps[1]->mask);
@@ -80,101 +93,98 @@ esp_err_t pumpsWrite(int8_t states){
             allpumps[a]->gpio == solarpumpe.gpio ||
             allpumps[a]->gpio == redundancy1.gpio
         ){
+            gpio_set_level(redundancy1.gpio, PUMP_OFF); // keep the relay shut. unessecary power loss
             continue;
         }
         //Die Logik Level für die Pumpen sind Invertiert
         gpio_set_level(
             allpumps[a]->gpio,
-            allpumps[a]->mask & states ? PUMP_OFF : PUMP_ON
+            allpumps[a]->mask & states ? PUMP_ON : PUMP_OFF
         );
+        ESP_LOGI(PUMPTAG, "%s ist jetzt %s", allpumps[a]->name, allpumps[a]->mask & states ? "Ein" : "Aus");
     }
     return ESP_OK;
 }
 
-static int8_t srvpumpstate;
-//This event will set the srvpumpstate to an apropriate state
-static esp_err_t _http_pump_event(esp_http_client_event_t *evt)
-{   
-    switch(evt->event_id) {
-        case HTTP_EVENT_ERROR:
-            ESP_LOGD(PUMPTAG, "HTTP_EVENT_ERROR");
-            break;
-        case HTTP_EVENT_ON_CONNECTED:
-            ESP_LOGD(PUMPTAG, "HTTP_EVENT_ON_CONNECTED");
-            break;
-        case HTTP_EVENT_HEADER_SENT:
-            ESP_LOGD(PUMPTAG, "HTTP_EVENT_HEADER_SENT");
-            break;
-        case HTTP_EVENT_ON_HEADER:
-            ESP_LOGD(PUMPTAG, "HTTP_EVENT_ON_HEADER");
-            printf("%.*s", evt->data_len, (char*)evt->data);
-            break;
-        case HTTP_EVENT_ON_DATA:
-            ESP_LOGD(PUMPTAG, "HTTP_EVENT_ON_DATA, len=%d", evt->data_len);
-            if (!esp_http_client_is_chunked_response(evt->client)) {
-                ESP_LOGD(PUMPTAG,"%.*s\n", evt->data_len, (char*)evt->data);
-                
-                if(strstr((char*)evt->data,"ON") != NULL)
-                srvpumpstate = PUMP_ON;
-                else if(strstr((char*)evt->data,"OFF") != NULL)
-                srvpumpstate = PUMP_OFF;
-                else if(strstr((char*)evt->data,"AUTO") != NULL)
-                srvpumpstate = PUMP_OFF;
-                else
-                srvpumpstate = -1;
-            }
-            break;
-        case HTTP_EVENT_ON_FINISH:
-            ESP_LOGD(PUMPTAG, "HTTP_EVENT_ON_FINISH");
-            break;
-        case HTTP_EVENT_DISCONNECTED:
-            ESP_LOGD(PUMPTAG, "HTTP_EVENT_DISCONNECTED");
-            break;
-    }
-    return ESP_OK;
-}
-
-//hilfsfunktion für pumps sync
-#define PUMPREQ2MASK_URL_BUFFER_SIZE 128
-static char urlbuff[PUMPREQ2MASK_URL_BUFFER_SIZE];
-int8_t pumpReq2Stt(gpio_num_t pump){
-    srvpumpstate = PUMP_ERR;
-
-    sprintf(urlbuff,"%s?pump=%d",URL_PUMPS,pump);
-    ESP_LOGD(PUMPTAG,"Requesting Pumpsate of %d. (GPIO)\nURL is: %s",pump,urlbuff);
-    // HTTP Config
-    esp_http_client_config_t config = {
-        .url = (const char*)urlbuff,
-        .event_handler = _http_pump_event,
-        .method = HTTP_METHOD_GET,
-        .auth_type = HTTP_AUTH_TYPE_BASIC,
-        .username = LDAP_ESP_UID,
-        .password = LDAP_ESP_PASSWORD
-    };
-
-    esp_http_client_handle_t client = esp_http_client_init(&config);
-    esp_http_client_perform(client);
-    esp_http_client_cleanup(client);
-
-    //ESP_LOGI(PUMPTAG,"State is: %d",srvpumpstate);
-    return srvpumpstate;
-}
-
-int8_t pumpsSync(){
-    int8_t states = 0;
-    for(uint8_t a = 0; a < PUMPENANZAHL; a++){
-        int8_t mskt = pumpReq2Stt(allpumps[a]->gpio);
-        if(mskt < 0)
-            return mskt;
-        states |= mskt * allpumps[a]->mask;
-    }
-    return states;
-}
-
-int8_t pumpsRead(){
+pump_states_t pumpsRead(){
     int8_t states = 0;
     for(uint8_t a = 0; a < PUMPENANZAHL; a++){
         states |= gpio_get_level(allpumps[a]->gpio) ? 0 : allpumps[a]->mask;
     }
     return states;
+}
+
+esp_err_t heizung_api_pumps(httpd_req_t *req){
+    /*
+        Receives HTTP header data + does some Error handling
+    */
+    if(!rest_api_recv(req))
+        return ESP_FAIL;
+    /*
+        A single function that handles authentication and error replies towards the client 
+    */
+    if(!rest_api_authenticate(req, rest_api_users, REST_USER_PERMISSION_RW))
+        return ESP_FAIL;
+
+    int8_t status = 0;
+    const char* json_tmp_pump_all = "{\"status\":%.1d, \"pumps\":[%s]}";
+    const char* json_tmp_pump_single = "{\"name\":\"%s\", \"state\":%.1d}";
+
+    size_t parrebuff = strlen(json_tmp_pump_single) + 24 + 2;
+    char* parr = (char*)malloc(parrebuff * PUMPENANZAHL);
+    if(!parr){
+        httpd_resp_send_500(req);
+        return ESP_FAIL;
+    }
+    strcpy(parr, "");
+    // Build JSON
+    char* parre = (char*)malloc(parrebuff);
+    if(!parre){
+        httpd_resp_send_500(req);
+        return ESP_FAIL;
+    }
+
+    for(uint8_t a = 0; a < PUMPENANZAHL; a++){
+        /*
+            Headervariablen überprüfen um Pumpe zu schalten
+        */
+        size_t len = httpd_req_get_hdr_value_len(req, allpumps[a]->name);
+        len++;
+        // Don't care about the useless relay
+        if(len > 0 && allpumps[a]->gpio != redundancy1.gpio){
+            char* rvbuff = (char*)malloc(len);
+            if(rvbuff == NULL){
+                httpd_resp_send_500(req);
+                free(parr);
+                free(parre);
+                return ESP_FAIL;
+            }
+            esp_err_t err = httpd_req_get_hdr_value_str(req, allpumps[a]->name, rvbuff, len);
+            if(err == ESP_OK){
+                int gs = atoi(rvbuff);
+                gpio_set_level(allpumps[a]->gpio, gs ? PUMP_OFF : PUMP_ON);
+                ESP_LOGI(PUMPTAG, "%s ist jetzt %s", allpumps[a]->name, gs ? "Aus" : "Ein");
+            }
+        }
+
+        // Creating JSON
+        strcpy(parre, "");
+        // Pumps are inverted
+        uint8_t pstatus = gpio_get_level(allpumps[a]->gpio) ? PUMP_OFF : PUMP_ON;
+        sprintf(parre, json_tmp_pump_single, allpumps[a]->name, pstatus);
+        strcat(parr, parre);
+        if(a != PUMPENANZAHL - 1)
+            strcat(parr, ",");
+    }
+    free(parre);
+    char* reply = (char*)malloc(strlen(json_tmp_pump_all) + parrebuff * PUMPENANZAHL);
+    strcpy(reply, "");
+    sprintf(reply, json_tmp_pump_all, status, parr);
+    free(parr);
+
+    httpd_resp_set_type(req, "text/json");
+    httpd_resp_send(req, reply, strlen(reply));
+
+    free(reply);
+    return ESP_OK;
 }
