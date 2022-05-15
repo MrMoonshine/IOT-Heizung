@@ -36,7 +36,7 @@ except FileNotFoundError:
 # URL
 url = "http://heizung/api/temperatures"
 response = requests.get(url, auth=(username, password))
-print(response.status_code)
+print("REST API Status Code:\t" + str(response.status_code))
 # JSON Parse. Fully decoded
 temps = response.json()
 #
@@ -80,3 +80,7 @@ try:
     print(mycursor.rowcount, "record inserted.")
 except Exception as e:
     print("Failed to add values to database")
+finally:
+    if mydb.is_connected():
+        mydb.close()
+        mycursor.close()
