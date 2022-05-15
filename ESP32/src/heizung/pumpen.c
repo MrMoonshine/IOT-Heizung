@@ -39,7 +39,7 @@ static const Pumpe zwischenpumpe = {
 };
 //Wärepumpe
 static const Pumpe warmepumpe = {
-    .name = "wärmepumpe",
+    .name = "waermepumpe",
     .gpio = 19,
     .mask = 1 << 5,
 };
@@ -93,6 +93,7 @@ esp_err_t pumpsWrite(pump_states_t states){
             allpumps[a]->gpio == solarpumpe.gpio ||
             allpumps[a]->gpio == redundancy1.gpio
         ){
+            gpio_set_level(redundancy1.gpio, PUMP_OFF); // keep the relay shut. unessecary power loss
             continue;
         }
         //Die Logik Level für die Pumpen sind Invertiert
@@ -100,6 +101,7 @@ esp_err_t pumpsWrite(pump_states_t states){
             allpumps[a]->gpio,
             allpumps[a]->mask & states ? PUMP_OFF : PUMP_ON
         );
+        //ESP_LOGI(PUMPTAG, "%s ist jetzt %s", allpumps[a]->name, allpumps[a]->mask & states ? "Ein" : "Aus");
     }
     return ESP_OK;
 }
@@ -121,7 +123,7 @@ esp_err_t heizung_api_pumps(httpd_req_t *req){
     /*
         A single function that handles authentication and error replies towards the client 
     */
-    if(!rest_api_authenticate(req, rest_api_users, REST_USER_PERMISSION_RO))
+    if(!rest_api_authenticate(req, rest_api_users, REST_USER_PERMISSION_RW))
         return ESP_FAIL;
 
     int8_t status = 0;
@@ -148,7 +150,8 @@ esp_err_t heizung_api_pumps(httpd_req_t *req){
         */
         size_t len = httpd_req_get_hdr_value_len(req, allpumps[a]->name);
         len++;
-        if(len > 0){
+        // Don't care about the useless relay
+        if(len > 0 && allpumps[a]->gpio != redundancy1.gpio){
             char* rvbuff = (char*)malloc(len);
             if(rvbuff == NULL){
                 httpd_resp_send_500(req);
@@ -159,15 +162,15 @@ esp_err_t heizung_api_pumps(httpd_req_t *req){
             esp_err_t err = httpd_req_get_hdr_value_str(req, allpumps[a]->name, rvbuff, len);
             if(err == ESP_OK){
                 int gs = atoi(rvbuff);
-                gpio_set_level(allpumps[a]->gpio, gs ? PUMP_ON : PUMP_OFF);
-                ESP_LOGI(PUMPTAG, "%s ist jetzt %s", allpumps[a]->name, gs ? "Ein" : "Aus");
+                gpio_set_level(allpumps[a]->gpio, gs ? PUMP_OFF : PUMP_ON);
+                ESP_LOGI(PUMPTAG, "%s ist jetzt %s", allpumps[a]->name, gs ? "Aus" : "Ein");
             }
         }
 
         // Creating JSON
         strcpy(parre, "");
         // Pumps are inverted
-        uint8_t pstatus = gpio_get_level(allpumps[a]->gpio) ? 0 : 1;
+        uint8_t pstatus = gpio_get_level(allpumps[a]->gpio) ? PUMP_OFF : PUMP_ON;
         sprintf(parre, json_tmp_pump_single, allpumps[a]->name, pstatus);
         strcat(parr, parre);
         if(a != PUMPENANZAHL - 1)
