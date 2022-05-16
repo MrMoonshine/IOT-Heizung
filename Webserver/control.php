@@ -5,7 +5,6 @@
     <link rel="stylesheet" type="text/css" href="styles/universal-rounded.css">
     <link rel="stylesheet" type="text/css" href="styles/input-rounded.css">
     <link rel="stylesheet" type="text/css" href="styles/checks.css">
-    <link rel="stylesheet" type="text/css" href="/styles/graph.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Heizung</title>
@@ -34,7 +33,10 @@
             <!--<script src="pumps.js"></script>-->
         </div>
         <div class="widget">
-            <h3>Reloads</h3>
+            <h3>Uptime</h3>
+            <p>
+                Wenn der ESP32 rebooted, dann ist das hier in der Liste. Wenn man den Grund weiß, dann kann man den Check referenzieren. Dadurch weiß man dann, dass der Reboot bekannt ist.
+            </p>
             <table>
                 <thead>
                     <tr>
@@ -56,14 +58,25 @@
                     if($row["ref"]){
                         print("<td><div class=\"badge badge-ok\">OK</div></td>");
                     }else{
+                        print("<form method=\"GET\" action=\"checks.php\">");
                         print("<td><div class=\"badge badge-warning\">WARNING</div></td>");
                     }
-                    print("<td><code>".$row["reload"]."</code></td>");
+                    print("<td><input type=\"text\" name=\"time\" value=\"".$row["reload"]."\" readonly/></td>");
+                    print("<input type=\"text\" name=\"check\" value=\"uptime\" readonly hidden/>");
                     print("<td><b>".$row["reason"]."</b></td>");
-                    print("<td>".$row["user"]."</td>");
-                    print("<td><input type=\"text\" value=\"".$row["comment"]."\" /></td>");
-                    print("<td><button class=\"button-reference\"> &#x2714; </button></td>");
-                    print("</tr>");
+                    print("<td><img class=\"ldap_picture\" alt=\"".$row["user"]."\" /></td>");
+                    print("<td><input type=\"text\" name=\"comment\" value=\"".$row["comment"]."\" ");
+                    if($row["ref"]){
+                        print("disabled ");
+                    }
+                    print("/></td>");
+                    print("<td><button class=\"button-reference\"> &#x2714;</button></td>");
+                    if($row["ref"]){
+                        print("</tr>");
+                    }else{
+                        print("</tr>");
+                        print("</form>");
+                    }
                 }
                 unset($row);
             ?>
