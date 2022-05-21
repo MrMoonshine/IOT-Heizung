@@ -18,6 +18,13 @@
 #include "heizung/solar.h"
 #include "core/timer.h"
 
+static const char *HOSTNAME = "heizung-test";
+void temperaturea_and_mdns(){
+    heatact();
+    // Renew A Record
+    mdns_hostname_set(HOSTNAME);
+}
+
 #define GPIO_ONE_WIRE TEMPERATURE_GPIO
 #define BLINK_GPIO CHIPLED
 #define MAX_DEVICES 11
@@ -182,7 +189,7 @@ void app_main(){
     rest_api_users = NULL;
     rest_user_add(&rest_api_users, HEIZUNG_USER, HEIZUNG_PASSWORD, REST_USER_PERMISSION_RW);
     //Hostname
-    rest_api_mdns("heizung");
+    rest_api_mdns(HOSTNAME);
     // Add resources
     rest_api_t *api = NULL;
     rest_api_add(&api, &uri_reset);
@@ -221,7 +228,8 @@ void app_main(){
     tempBuildSensPtr(owb,dssensors);
     //Init Analog Temperature Meassurement
     tempAnalogInit();
-    timerInit(&heatact);
+    // Every minute: read temperatures + renew mDNS record
+    timerInit(TEMPSENSOR_READ_INTERVAL, &temperaturea_and_mdns);
 
     //Give the Wifi some time to initialize
     vTaskDelay(800 / portTICK_PERIOD_MS);

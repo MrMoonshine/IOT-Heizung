@@ -12,6 +12,9 @@
 #include "math.h"
 #include "romcodes.h"
 
+// 50 Sekunden
+#define TEMPSENSOR_READ_INTERVAL 50
+
 #define DS_RESOLUTION DS18B20_RESOLUTION_12_BIT
 #define ZERO_KELVIN -273.15
 #define TEMPERATURE_FAIL -2048
