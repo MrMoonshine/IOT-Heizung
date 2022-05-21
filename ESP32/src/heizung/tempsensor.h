@@ -15,6 +15,14 @@
 // 50 Sekunden
 #define TEMPSENSOR_READ_INTERVAL 50
 
+typedef struct heizung_temperatur_t{
+    const char* name;
+    const OneWireBus_ROMCode romcode;
+    float value;
+    // Next element
+    struct heizung_temperatur_t *next;
+}heizung_temperatur_t;
+
 #define DS_RESOLUTION DS18B20_RESOLUTION_12_BIT
 #define ZERO_KELVIN -273.15
 #define TEMPERATURE_FAIL -2048

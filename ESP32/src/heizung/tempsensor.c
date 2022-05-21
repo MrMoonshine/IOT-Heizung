@@ -1,6 +1,6 @@
 #include "tempsensor.h"
 
-static const char* OWBTAG = "OneWireBus";
+static const char* TAG = "OneWireBus";
 static const char *sensornames[SENSORS_TOTAL+1] = {
     "room",
     "red",
@@ -36,7 +36,7 @@ bool tempVerify(OneWireBus *bus, OneWireBus_ROMCode *dev){
     );
 
     if(searchStatus != OWB_STATUS_OK){
-        ESP_LOGE(OWBTAG,"Failed to search device");
+        ESP_LOGE(TAG,"Failed to search device");
         return false;
     }
     
@@ -46,7 +46,7 @@ bool tempVerify(OneWireBus *bus, OneWireBus_ROMCode *dev){
         if(devCode == NULL)
         return false;
         owb_string_from_rom_code(*dev,devCode,sizeof(devCode));
-        ESP_LOGW(OWBTAG,"Failed to find sensor: %s",devCode);
+        ESP_LOGW(TAG,"Failed to find sensor: %s",devCode);
 
         free(devCode);
         return false;
@@ -58,7 +58,7 @@ esp_err_t tempBuildSensPtr(OneWireBus *bus, DS18B20_Info *sensors){
     esp_err_t ret = ESP_OK;
     for(uint8_t a = 0; a < SENSORS_TOTAL; a++){
         if(tempInitSensor(bus,(OneWireBus_ROMCode *)sensorcodes[a],sensors+a) != ESP_OK){
-            ESP_LOGE(OWBTAG,"Sensor %s konnte nicht gefunden werden!",sensornames[a]);
+            ESP_LOGE(TAG,"Sensor %s konnte nicht gefunden werden!",sensornames[a]);
             ret = ESP_ERR_NOT_FOUND;
         }
     }
@@ -96,10 +96,10 @@ esp_err_t tempInitSensor(OneWireBus *bus, OneWireBus_ROMCode *code, DS18B20_Info
 float tempReadSensor(DS18B20_Info *info){
     float temperature = TEMPERATURE_FAIL;
     if(!info->bus || !&info->rom_code){
-        ESP_LOGW(OWBTAG,"DS info ist NULL");
+        ESP_LOGW(TAG,"DS info ist NULL");
         return temperature;
     }else if(!tempVerify((OneWireBus*)info->bus,&info->rom_code)){
-        //ESP_LOGW(OWBTAG,"Den Sensor gibt es nicht");
+        //ESP_LOGW(TAG,"Den Sensor gibt es nicht");
         return temperature;
     }
 
@@ -107,7 +107,7 @@ float tempReadSensor(DS18B20_Info *info){
     ds18b20_wait_for_conversion(info);
     
     if(ds18b20_read_temp(info,&temperature) == DS18B20_ERROR_DEVICE){
-        ESP_LOGW(OWBTAG,"DS18B20 Device Error");
+        ESP_LOGW(TAG,"DS18B20 Device Error");
         return TEMPERATURE_FAIL;
     }
 
@@ -137,8 +137,6 @@ static const adc_bits_width_t width = ADC_WIDTH_BIT_12;
 //GPIO 36
 static const adc_channel_t channel = ADC1_CHANNEL_0;
 static esp_adc_cal_characteristics_t *calli;
-
-static const char* TAG = "Analog Meassure";
 
 int tempGetRt(){
     uint32_t vin = esp_adc_cal_raw_to_voltage(adc1_get_raw(channel),calli);

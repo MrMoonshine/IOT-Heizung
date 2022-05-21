@@ -19,11 +19,6 @@
 #include "core/timer.h"
 
 static const char *HOSTNAME = "heizung-test";
-void temperaturea_and_mdns(){
-    heatact();
-    // Renew A Record
-    mdns_hostname_set(HOSTNAME);
-}
 
 #define GPIO_ONE_WIRE TEMPERATURE_GPIO
 #define BLINK_GPIO CHIPLED
@@ -80,6 +75,12 @@ void heatact(void *args){
     }
     
     pumpsWrite(pumpsDefault());
+}
+
+void temperaturea_and_mdns(){
+    heatact(NULL);
+    // Renew A Record
+    mdns_hostname_set(HOSTNAME);
 }
 /*
 ,---.    ,---.     .---.  _______ 
