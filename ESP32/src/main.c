@@ -18,7 +18,7 @@
 #include "heizung/solar.h"
 #include "core/timer.h"
 
-static const char *HOSTNAME = "heizung-test";
+static const char *HOSTNAME = "heizung";
 
 #define GPIO_ONE_WIRE TEMPERATURE_GPIO
 #define BLINK_GPIO CHIPLED
