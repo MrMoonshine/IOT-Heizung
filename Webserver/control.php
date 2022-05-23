@@ -25,9 +25,15 @@
     </nav>
         <div class="container">
             <h3>Pumpensteuerung</h3>
-            <table>
-            </table>            
-            <!--<script src="pumps.js"></script>-->
+            <div class="table-responsive">
+                <table class="table" id="pumptable">
+                    <thead>
+                        <th scope="col">Pumpe</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Schalter</th>
+                    </thead>
+                </table>
+            </div>
         </div>
     <div class="container">
         <h3>Uptime</h3>
