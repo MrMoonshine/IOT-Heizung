@@ -73,7 +73,7 @@ function getDailyData(days){
 					drawPoints: false,
 				},
 				yellow:{
-					color: "#e8be00",
+					color: "yellow",
 					strokeWidth: 1,
 					drawPoints: false,
 				},
@@ -88,7 +88,7 @@ function getDailyData(days){
 					drawPoints: false,
 				},
 				white:{
-					color: "black",
+					color: "white",
 					strokeWidth: 1,
 					drawPoints: false,
 				},

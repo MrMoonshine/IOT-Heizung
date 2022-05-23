@@ -8,6 +8,18 @@
 #   */2 * * * * /usr/bin/python /var/www/IOT-Heizung/checks/temperatures.py >> /var/www/IOT-Heizung/checks/logs/temperatures.log
 #   
 #
+# Define class for log colours
+class logcolour:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
 import json
 import requests
 import os
@@ -17,7 +29,8 @@ from pprint import pprint
 import mysql.connector
 # Start program with date and time for Logs
 now = datetime.now()
-print("[", now, "] Temperature Check Start")
+print(f"{logcolour.OKCYAN}[{now}]{logcolour.ENDC} Temperature Check Start.")
+#print("[", now, "] Temperature Check Start")
 # json with username and password
 LOGIN_FILE = "/home/david/.confidential/heizung-rest-user.json"
 username=""
@@ -39,12 +52,35 @@ response = requests.get(url, auth=(username, password))
 print("REST API Status Code:\t" + str(response.status_code))
 # JSON Parse. Fully decoded
 temps = response.json()
+temperaturesCount = len(temps["temperatures"])
+#
+#   Count Values with Zero
+#
+zerocount = 0
+for i in range(temperaturesCount):
+    if(temps["temperatures"][i]["value"] == 0):
+        zerocount += 1
+del i
+
+# Only one value is allowed to be Zero.
+if(zerocount > 1):
+    print(f"{logcolour.FAIL}Implausible data returned:")
+    for i in range(temperaturesCount):
+        vali = temps["temperatures"][i]["value"]
+        if(vali == 0):
+            print(f"{logcolour.FAIL}{logcolour.BOLD}")
+        else:
+            print(logcolour.OKBLUE)
+        print(f'{temps["temperatures"][i]["name"]} = {vali} °C{logcolour.ENDC}')
+    del i
+    exit()
+
+del zerocount
 #
 #   DATABASE
 #
 try:
     sql = "INSERT INTO temperatures ("
-    temperaturesCount = len(temps["temperatures"])
     # Build the keys
     for i in range(temperaturesCount):
         #print(temps["temperatures"][i]["name"])
@@ -77,9 +113,9 @@ try:
     mycursor = mydb.cursor()
     mycursor.execute(sql)
     mydb.commit()
-    print(mycursor.rowcount, "record inserted.")
+    print(f"{logcolour.OKGREEN}{mycursor.rowcount} record inserted.{logcolour.ENDC}")
 except Exception as e:
-    print("Failed to add values to database")
+    print(f"{logcolour.FAIL}Failed to insert values in Database{logcolour.ENDC}")
 finally:
     if mydb.is_connected():
         mydb.close()

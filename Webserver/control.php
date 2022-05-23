@@ -29,7 +29,8 @@
     <div class="dashboard">
         <div class="widget">
             <h3>Pumpensteuerung</h3>
-
+            <table>
+            </table>            
             <!--<script src="pumps.js"></script>-->
         </div>
         <div class="widget">
