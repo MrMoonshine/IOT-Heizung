@@ -43,8 +43,8 @@ function getDailyData(days){
 			document.getElementById(SINGLE_BO).innerHTML,
 			{
 				showRangeSelector: true,
-				rangeSelectorPlotFillColor: '#E15D44',
-				rangeSelectorPlotFillGradientColor: 'tomato',
+				rangeSelectorPlotFillColor: 'midnightblue',
+				rangeSelectorPlotFillGradientColor: 'dodgerblue',
 				colorValue: 0.9,
 				fillAlpha: 0.4,
 				title:"",
@@ -73,7 +73,7 @@ function getDailyData(days){
 					drawPoints: false,
 				},
 				yellow:{
-					color: "yellow",
+					color: "orange",
 					strokeWidth: 1,
 					drawPoints: false,
 				},
@@ -88,7 +88,7 @@ function getDailyData(days){
 					drawPoints: false,
 				},
 				white:{
-					color: "white",
+					color: "black",
 					strokeWidth: 1,
 					drawPoints: false,
 				},
