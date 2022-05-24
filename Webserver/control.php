@@ -25,13 +25,28 @@
     </nav>
         <div class="container">
             <h3>Pumpensteuerung</h3>
+            <p>Test. Keine echten daten!</p>
             <div class="table-responsive">
                 <table class="table" id="pumptable">
                     <thead>
-                        <th scope="col">Pumpe</th>
-                        <th scope="col">Status</th>
-                        <th scope="col">Schalter</th>
+                        <tr>
+                            <th scope="col">Pumpe</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Schalter</th>
+                        </tr>
                     </thead>
+                    <tbody>
+                        <tr>
+                            <th>Solarpumpe</th>
+                            <td>
+                                <span class="badge rounded-pill text-bg-success">Ein</span>
+                            </td>
+                            <td>
+                                <button class="btn btn-success" disabled>Ein</button>
+                                <button class="btn btn-danger" disabled>Aus</button>
+                            </td>
+                        </tr>
+                    </tbody>
                 </table>
             </div>
         </div>
