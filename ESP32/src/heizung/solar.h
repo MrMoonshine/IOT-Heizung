@@ -27,5 +27,5 @@ static const float SOLAR_TO_BUFF_OFFSET = 10;
  *
  * @return Anzahl der Berechnungen zum Aussetzen
 */
-uint8_t solarSetByTemp(float *temps);
+uint8_t solarSetByTemp(float solar, float buffer, float vorlauf, float rucklauf);
 #endif

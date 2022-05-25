@@ -1,4 +1,7 @@
 #pragma once
+#include <string.h>
+#include <esp_http_server.h>
+#include <rest.h>
 #include <include/owb.h>
 #include <include/owb_rmt.h>
 #include <include/ds18b20.h>
@@ -14,10 +17,14 @@
 
 // 50 Sekunden
 #define TEMPSENSOR_READ_INTERVAL 50
+// Max length of a sensor name
+#define TEMPSENSOR_NAME_LEN 8
 
 typedef struct heizung_temperatur_t{
-    const char* name;
-    const OneWireBus_ROMCode romcode;
+    char name[8];
+    uint8_t id;
+    OneWireBus_ROMCode* romcode;
+    DS18B20_Info info;
     float value;
     // Next element
     struct heizung_temperatur_t *next;
@@ -26,28 +33,42 @@ typedef struct heizung_temperatur_t{
 #define DS_RESOLUTION DS18B20_RESOLUTION_12_BIT
 #define ZERO_KELVIN -273.15
 #define TEMPERATURE_FAIL -2048
-
-//Does an ESP error log on failure
-esp_err_t tempBuildSensPtr(OneWireBus *bus, DS18B20_Info *sensors);
-bool tempVerify(OneWireBus *bus, OneWireBus_ROMCode *dev);
+/*
+    @brief Linked List mit Temperaturen, namen und messwerten 
+    @parameter[in] head Liste
+    @parameter[in] bus One Wire Bus
+    @parameter[in] name Name des Sensors im JSON
+*/
+esp_err_t temp_owb_add_sensor(heizung_temperatur_t** head, OneWireBus *bus, OneWireBus_ROMCode *code, uint8_t id, const char* name);
+/*
+    @brief Erstellt alle Sensoren
+*/
+esp_err_t temp_owb_add_all(OneWireBus *bus);
+/*
+    @brief Alle OWB Sensoren Lesen, und Messwerte speichern
+*/
+esp_err_t temp_owb_read_sensors();
+/*
+    @brief Alle OWB Sensoren Zählen
+*/
+unsigned int temp_owb_count_sensors();
+/*
+    @brief Pointer Weitergabe
+    @returns Pointer zur Liste
+*/
+heizung_temperatur_t* temp_owb_list();
 //alter the settings to fit the sensors
 void tempDoSettings(OneWireBus *owb);
-//Init the sensor itself
-esp_err_t tempInitSensor(OneWireBus *bus, OneWireBus_ROMCode *code, DS18B20_Info *info);
-//read Analog Temperature
-esp_err_t tempAnalogCalc(int Rt,float *tempp);
-int tempGetRt();
-void tempAnalogInit();
 /*
- * @brief Lesen der Temperatur eines Sensors
- * @param info Der Info Struct vom Sensor
- * @return Temperatur in °C. Bei Fehler kommt -2048°C
+    @brief Analogen Sensor Lesen (Zum Glück gibts da nur die Solar ;) )
 */
-float tempReadSensor(DS18B20_Info *info);
+void temp_analog_init();
 /*
- * @brief Nutzt mehrfach die funktion tempReadSensor(). Alle werte kommen in ein float array
- * @param temps float array. da kommen die Ergebnisse rein
- * @param sensors Sensor infos
- * @return ESP_OK. Ausser Solarmessung hatte fehler
+    @brief Analogen Sensor Lesen (Zum Glück gibts da nur die Solar ;) )
+    @return Temperatur in °C
 */
-esp_err_t tempReadArray(float* temps, DS18B20_Info *sensors);
+float temp_analog_read();
+/*
+    @brief API Callback
+*/
+esp_err_t heizung_api_temperatures(httpd_req_t *req);

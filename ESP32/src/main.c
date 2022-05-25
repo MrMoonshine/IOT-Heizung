@@ -9,8 +9,14 @@
 #include "wifi.h"
 #include <rest.h>
 #include <string.h>
-// Users for Rest API
+// Users for Rest API.
 #include "/home/david/.secrets/heizung.h"
+#ifndef HEIZUNG_USER
+    #define HEIZUNG_USER "admin"
+#endif
+#ifndef HEIZUNG_PASSWORD
+    #define HEIZUNG_USER "password"
+#endif
 
 #include "heizung/tempsensor.h"
 #include "heizung/pumpen.h"
@@ -21,7 +27,6 @@
 static const char *HOSTNAME = "heizung";
 
 #define GPIO_ONE_WIRE TEMPERATURE_GPIO
-#define BLINK_GPIO CHIPLED
 #define MAX_DEVICES 11
 #define DS18B20_ROM_CODE_LENGTH 17
 
@@ -33,23 +38,8 @@ static uint8_t blocker = 0;         //Anzahl der Aussetzer für die Solarpumpe
 /*---------------------------------------------------------*/
 /*              Variables for One Wire Bus                 */
 /*---------------------------------------------------------*/
-DS18B20_Info dssensors[SENSORS_TOTAL];
 owb_rmt_driver_info rmtDriverInfo;
 OneWireBus *owb;
-//Array for all temperatures (+1 beacuse of the analog solar meassure)
-float temperatures[SENSORS_TOTAL + 1];
-// Names
-static const char *sensornames[SENSORS_TOTAL+1] = {
-    "room",
-    "red",
-    "green",
-    "blue",
-    "white",
-    "yellow",
-    "brown",
-    "solar"
-};
-
 /**
  * @brief  Die Callback funktion vom Timer. Wird in einem Bestimmten Intevall immer wieder Aufgerufen.
  *
@@ -60,16 +50,40 @@ void heatact(void *args){
 /*              Temperaturen Messen                        */
 /*---------------------------------------------------------*/
     ESP_LOGI(TAG,"Messungen werden durchgeführt\nPumpStates:%d",pumpsRead());
-    //Fill the array with useless values
-    memset(temperatures, -1000, sizeof(float)*(SENSORS_TOTAL + 1));
-    ESP_ERROR_CHECK_WITHOUT_ABORT(tempReadArray(temperatures,dssensors));
+    ESP_ERROR_CHECK_WITHOUT_ABORT(temp_owb_read_sensors());
 /*---------------------------------------------------------*/
 /*              Pumpen                                     */
 /*---------------------------------------------------------*/
     if(blocker == 0){
+        heizung_temperatur_t *temps = temp_owb_list();
+        float tsolar_vorlauf = TEMPERATURE_FAIL, tsolar_rucklauf = TEMPERATURE_FAIL, tbuffer_vorlauf = TEMPERATURE_FAIL;
+        // Fetch temperatures from list
+        while (temps)
+        {
+            switch (temps->id)
+            {
+            case TEMP_BUFFER:
+                tbuffer_vorlauf = temps->value;
+                break;
+            case TEMP_RUCKLAUF:
+                tsolar_rucklauf = temps->value;
+                break;
+            case TEMP_VORLAUF:
+                tsolar_vorlauf = temps->value;
+                break;
+            default:
+                break;
+            }
+            temps = temps->next;
+        }
+        // TEMPORARILY DISABLE. PUMP MUST BE SET MANUALLY
         //Set the Solarpump according to temperatures
-        blocker = solarSetByTemp(temperatures);
+        //blocker = solarSetByTemp(temp_analog_read(), tbuffer_vorlauf, tsolar_vorlauf, tsolar_rucklauf);
+        blocker = 5;
         ESP_LOGI(TAG,"Solarpumpe evaluiert");
+        // I am too lazy to create a new timer
+        mdns_hostname_set(HOSTNAME);
+        ESP_LOGI(TAG,"Bei der Gelegenheit auch gleich mDNS erneuert");
     }else{
         blocker--;
     }
@@ -105,55 +119,7 @@ static httpd_uri_t uri_reset = {
 /*
     @brief Alle Temperaturen in einem API response. Permission: RO
 */
-esp_err_t heizung_api_temperatures(httpd_req_t *req){
-    /*
-        Receives HTTP header data + does some Error handling
-    */
-    if(!rest_api_recv(req))
-        return ESP_FAIL;
-    /*
-        A single function that handles authentication and error replies towards the client 
-    */
-    if(!rest_api_authenticate(req, rest_api_users, REST_USER_PERMISSION_RO))
-        return ESP_FAIL;
 
-    const char* json_tmp_temp_all = "{\"status\":%.1d, \"temperatures\":[%s]}";
-    const char* json_tmp_temp_single = "{\"name\":\"%s\", \"value\":%.2f, \"unit\":\"°C\"}";
-    // temp array element buffer
-    size_t tarrebuff = strlen(json_tmp_temp_single) + 32; // 32 Geschätzt für Name, Wert und Komma (unsafe but ok)
-    char* tarr = (char*)malloc((SENSORS_TOTAL + 1)*tarrebuff);
-    if(!tarr){
-        httpd_resp_send_500(req);
-        return ESP_FAIL;
-    }
-    strcpy(tarr, "");
-    // Build JSON
-    char* tarre = (char*)malloc(tarrebuff);
-    if(!tarre){
-        httpd_resp_send_500(req);
-        return ESP_FAIL;
-    }
-    for(uint8_t a = 0; a < SENSORS_TOTAL + 1; a++){
-        strcpy(tarre, "");
-        sprintf(tarre, json_tmp_temp_single, sensornames[a], temperatures[a]);
-        // Copy to JSON array
-        strcat(tarr, tarre);
-        if(a != SENSORS_TOTAL)
-            strcat(tarr, ",");
-    }
-    free(tarre);
-
-    char* reply = (char*)malloc(strlen(json_tmp_temp_all) + tarrebuff*(SENSORS_TOTAL + 1));
-    strcpy(reply, "");
-    sprintf(reply, json_tmp_temp_all, 0, tarr);
-    free(tarr);
-
-    httpd_resp_set_type(req, "text/json");
-    httpd_resp_send(req, reply, strlen(reply));
-
-    free(reply);
-    return ESP_OK;
-}
 // URI
 static httpd_uri_t uri_temperatures = {
     .uri      = "/api/temperatures",
@@ -226,11 +192,11 @@ void app_main(){
     tempDoSettings(owb);
     ESP_LOGI(TAG, "Starte Sensoren...");
     //Init All Sensors
-    tempBuildSensPtr(owb,dssensors);
+    ESP_ERROR_CHECK_WITHOUT_ABORT(temp_owb_add_all(owb));
     //Init Analog Temperature Meassurement
-    tempAnalogInit();
+    temp_analog_init();
     // Every minute: read temperatures + renew mDNS record
-    timerInit(TEMPSENSOR_READ_INTERVAL, &temperaturea_and_mdns);
+    timerInit(TEMPSENSOR_READ_INTERVAL, &heatact);
 
     //Give the Wifi some time to initialize
     vTaskDelay(800 / portTICK_PERIOD_MS);
