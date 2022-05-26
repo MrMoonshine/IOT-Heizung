@@ -4,7 +4,7 @@ create table check_names(
     check_id int not null AUTO_INCREMENT,
     primary key (check_id)
 );
-
+-- Status table
 create table check_status(
     ts timestamp NOT NULL,
     check_id int not null,

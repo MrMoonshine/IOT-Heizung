@@ -38,28 +38,36 @@
                     <tbody>
                             <?php
                                 require "/home/david/.confidential/databaseAccess.php";
+                                $pumppyload="";
+                                $header = [
+                                    'Authorization: Basic '.base64_encode($username.":".$password),
+                                    'Connection: close'
+                                ];
+
                                 if(isset($_GET["pump"]) && isset($_GET["state"])){
-                                    shell_exec("python /var/www/IOT-Heizung/Webserver/set.py");
+                                    // Add pump in header
+                                    $header[] = $_GET["pump"].": ".$_GET["state"];
+                                }else{
+                                    // it somehow crshes without it lol
+                                    $header[] = "mode: readonly";
                                 }
+
                                 $opts = array('http' =>
                                     array(
                                         'method'  => 'POST',
-                                        'header'  => [
-                                            'Authorization: Basic '.base64_encode($username.":".$password),
-                                            'Connection: close',
-                                            $pdata
-                                        ],
-                                        'timeout' => 1.5
+                                        'header'  => $header,
+                                        'timeout' => 1.2
                                     )
                                 );
                                 $context = stream_context_create($opts);
 
-                                $result = file_get_contents('http://alpakagott', false, $context);
+                                $result = file_get_contents('http://heizung/api/pumps', false, $context);
                                 $jdata = json_decode($result);
-                                var_dump($result);
+                                //var_dump($result);
                                 foreach ($jdata->pumps as $a) {
+                                    $name = $a->name;
                                     echo '<tr>';
-                                    echo('<th scope="row">'.$a->name.'</th>');
+                                    echo('<th scope="row">'.$name.'</th>');
                                     echo('<td>');
                                     if($a->state == 0){
                                         echo('<span class="badge rounded-pill text-bg-success">Ein</span>');
@@ -67,7 +75,21 @@
                                         echo('<span class="badge rounded-pill text-bg-danger">Aus</span>');
                                     }
                                     echo('</td>');
-                                    echo('<td><button class="btn btn-success">Ein</button><button class="btn btn-danger">Aus</button></td>');
+                                    
+                                    echo <<<END
+                                    <td class="d-flex">
+                                    <form method="GET">
+                                        <input type="text" name="pump" value="$name" readonly hidden/>
+                                        <input type="number" name="state" value="0" readonly hidden/>
+                                        <input type="submit" class="btn btn-success" value="Ein"/>
+                                    </form>
+                                    <form method="GET">
+                                        <input type="text" name="pump" value="$name" readonly hidden/>
+                                        <input type="number" name="state" value="1" readonly hidden/>
+                                        <input type="submit" class="btn btn-danger" value="Aus"/>
+                                    </form>
+                                    </td>
+                                    END;
                                     echo '</tr>';
                                 }
                             ?>
