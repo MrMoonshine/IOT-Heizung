@@ -149,10 +149,9 @@ esp_err_t heizung_api_pumps(httpd_req_t *req){
             Headervariablen überprüfen um Pumpe zu schalten
         */
         size_t len = httpd_req_get_hdr_value_len(req, allpumps[a]->name);
-        len++;
         // Don't care about the useless relay
         if(len > 0 && allpumps[a]->gpio != redundancy1.gpio){
-            char* rvbuff = (char*)malloc(len);
+            char* rvbuff = (char*)malloc(++len);
             if(rvbuff == NULL){
                 httpd_resp_send_500(req);
                 free(parr);
@@ -165,6 +164,7 @@ esp_err_t heizung_api_pumps(httpd_req_t *req){
                 gpio_set_level(allpumps[a]->gpio, gs ? PUMP_OFF : PUMP_ON);
                 ESP_LOGI(PUMPTAG, "%s ist jetzt %s", allpumps[a]->name, gs ? "Aus" : "Ein");
             }
+            free(rvbuff);
         }
 
         // Creating JSON
