@@ -36,16 +36,41 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <th>Solarpumpe</th>
-                            <td>
-                                <span class="badge rounded-pill text-bg-success">Ein</span>
-                            </td>
-                            <td>
-                                <button class="btn btn-success" disabled>Ein</button>
-                                <button class="btn btn-danger" disabled>Aus</button>
-                            </td>
-                        </tr>
+                            <?php
+                                require "/home/david/.confidential/databaseAccess.php";
+                                if(isset($_GET["pump"]) && isset($_GET["state"])){
+                                    shell_exec("python /var/www/IOT-Heizung/Webserver/set.py");
+                                }
+                                $opts = array('http' =>
+                                    array(
+                                        'method'  => 'POST',
+                                        'header'  => [
+                                            'Authorization: Basic '.base64_encode($username.":".$password),
+                                            'Connection: close',
+                                            $pdata
+                                        ],
+                                        'timeout' => 1.5
+                                    )
+                                );
+                                $context = stream_context_create($opts);
+
+                                $result = file_get_contents('http://alpakagott', false, $context);
+                                $jdata = json_decode($result);
+                                var_dump($result);
+                                foreach ($jdata->pumps as $a) {
+                                    echo '<tr>';
+                                    echo('<th scope="row">'.$a->name.'</th>');
+                                    echo('<td>');
+                                    if($a->state == 0){
+                                        echo('<span class="badge rounded-pill text-bg-success">Ein</span>');
+                                    }else{
+                                        echo('<span class="badge rounded-pill text-bg-danger">Aus</span>');
+                                    }
+                                    echo('</td>');
+                                    echo('<td><button class="btn btn-success">Ein</button><button class="btn btn-danger">Aus</button></td>');
+                                    echo '</tr>';
+                                }
+                            ?>
                     </tbody>
                 </table>
             </div>
