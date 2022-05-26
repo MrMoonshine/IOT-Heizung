@@ -34,7 +34,11 @@ static const char* TAG = "Heizung";
 /*---------------------------------------------------------*/
 /*              Variables for Pumps                        */
 /*---------------------------------------------------------*/
-static uint8_t blocker = 0;         //Anzahl der Aussetzer für die Solarpumpe
+volatile uint8_t blocker = 0;         //Anzahl der Aussetzer für die Solarpumpe
+/*
+    @brief ist die Solarpumpe im automatischen Betrieb?
+*/
+static bool solar_auto = true;
 /*---------------------------------------------------------*/
 /*              Variables for One Wire Bus                 */
 /*---------------------------------------------------------*/
@@ -54,7 +58,7 @@ void heatact(void *args){
 /*---------------------------------------------------------*/
 /*              Pumpen                                     */
 /*---------------------------------------------------------*/
-    if(blocker == 0){
+    if(blocker == 0 && solar_auto){
         heizung_temperatur_t *temps = temp_owb_list();
         float tsolar_vorlauf = TEMPERATURE_FAIL, tsolar_rucklauf = TEMPERATURE_FAIL, tbuffer_vorlauf = TEMPERATURE_FAIL;
         // Fetch temperatures from list
@@ -78,8 +82,7 @@ void heatact(void *args){
         }
         // TEMPORARILY DISABLE. PUMP MUST BE SET MANUALLY
         //Set the Solarpump according to temperatures
-        //blocker = solarSetByTemp(temp_analog_read(), tbuffer_vorlauf, tsolar_vorlauf, tsolar_rucklauf);
-        blocker = 5;
+        blocker = solarSetByTemp(temp_analog_read(), tbuffer_vorlauf, tsolar_vorlauf, tsolar_rucklauf);
         ESP_LOGI(TAG,"Solarpumpe evaluiert");
     }else{
         blocker--;
@@ -89,10 +92,47 @@ void heatact(void *args){
     mdns_hostname_set(HOSTNAME);
 }
 
-void temperaturea_and_mdns(){
-    heatact(NULL);
-    // Renew A Record
-    mdns_hostname_set(HOSTNAME);
+esp_err_t heizung_api_solarauto(httpd_req_t *req){
+    /*
+        Receives HTTP header data + does some Error handling
+    */
+    if(!rest_api_recv(req))
+        return ESP_FAIL;
+    /*
+        A single function that handles authentication and error replies towards the client 
+    */
+    if(!rest_api_authenticate(req, rest_api_users, REST_USER_PERMISSION_RW))
+        return ESP_FAIL;
+
+    const char* solarautokey = "manuell";
+    size_t len = httpd_req_get_hdr_value_len(req, solarautokey);
+    if(len > 0){
+        char* rvbuff = (char*)malloc(++len);
+        if(rvbuff == NULL){
+            httpd_resp_send_500(req);
+            return ESP_FAIL;
+        }
+        esp_err_t err = httpd_req_get_hdr_value_str(req, solarautokey, rvbuff, len);
+        if(err == ESP_OK){
+            int as = atoi(rvbuff);
+            // Set automatic mode. Invert manual
+            solar_auto = !as;
+        }
+        free(rvbuff);
+    }
+    
+    const char* json_tmp = "{\"status\":%.1d, \"modus\":\"%s\"}";
+    size_t rlen = strlen(json_tmp) + 16;
+    // Send back buffer
+    char* reply = (char*)malloc(rlen);
+    strcpy(reply, "");
+    sprintf(reply, json_tmp, 0, solar_auto ? "automatisch" : solarautokey);
+
+    httpd_resp_set_type(req, "text/json");
+    httpd_resp_send(req, reply, strlen(reply));
+
+    free(reply);
+    return ESP_OK;
 }
 /*
 ,---.    ,---.     .---.  _______ 
@@ -140,6 +180,13 @@ static httpd_uri_t uri_pumps_post = {
     .user_ctx = NULL
 };
 
+static httpd_uri_t uri_pumps_solar = {
+    .uri      = "/api/solar",
+    .method   = HTTP_POST,
+    .handler  = heizung_api_solarauto,
+    .user_ctx = NULL
+};
+
 void app_main(){
     // gpio setup
     pumpsInit();
@@ -161,6 +208,7 @@ void app_main(){
     rest_api_add(&api, &uri_temperatures);
     rest_api_add(&api, &uri_pumps);
     rest_api_add(&api, &uri_pumps_post);
+    rest_api_add(&api, &uri_pumps_solar);
     // Start server
     rest_api_start_server(api);
     ESP_LOGI(TAG, "REST API gestartet");
