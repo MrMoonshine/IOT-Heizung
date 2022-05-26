@@ -44,9 +44,9 @@
                                     'Connection: close'
                                 ];
 
-                                if(isset($_GET["pump"]) && isset($_GET["state"])){
+                                if(isset($_POST["pump"]) && isset($_POST["state"])){
                                     // Add pump in header
-                                    $header[] = $_GET["pump"].": ".$_GET["state"];
+                                    $header[] = $_POST["pump"].": ".$_POST["state"];
                                 }else{
                                     // it somehow crshes without it lol
                                     $header[] = "mode: readonly";
@@ -78,12 +78,12 @@
                                     
                                     echo <<<END
                                     <td class="d-flex">
-                                    <form method="GET">
+                                    <form method="POST">
                                         <input type="text" name="pump" value="$name" readonly hidden/>
                                         <input type="number" name="state" value="0" readonly hidden/>
                                         <input type="submit" class="btn btn-success" value="Ein"/>
                                     </form>
-                                    <form method="GET">
+                                    <form method="POST">
                                         <input type="text" name="pump" value="$name" readonly hidden/>
                                         <input type="number" name="state" value="1" readonly hidden/>
                                         <input type="submit" class="btn btn-danger" value="Aus"/>
