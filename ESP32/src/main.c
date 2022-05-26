@@ -81,14 +81,12 @@ void heatact(void *args){
         //blocker = solarSetByTemp(temp_analog_read(), tbuffer_vorlauf, tsolar_vorlauf, tsolar_rucklauf);
         blocker = 5;
         ESP_LOGI(TAG,"Solarpumpe evaluiert");
-        // I am too lazy to create a new timer
-        mdns_hostname_set(HOSTNAME);
-        ESP_LOGI(TAG,"Bei der Gelegenheit auch gleich mDNS erneuert");
     }else{
         blocker--;
     }
     
-    pumpsWrite(pumpsDefault());
+    //pumpsWrite(pumpsDefault());
+    mdns_hostname_set(HOSTNAME);
 }
 
 void temperaturea_and_mdns(){
