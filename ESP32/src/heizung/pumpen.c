@@ -1,7 +1,5 @@
 #include "pumpen.h"
 
-extern rest_user_t *rest_api_users;
-
 static const char* PUMPTAG = "Pumpensteuerung";
 /*-------------Relay Board 1-------------------*/
 //Pumpe für die Heizung
@@ -54,7 +52,7 @@ static const Pumpe* allpumps[PUMPENANZAHL] = {
 };
 
 static void initPump(const Pumpe *pump){
-    gpio_pad_select_gpio(pump->gpio);
+    //gpio_pad_select_gpio(pump->gpio);
     gpio_reset_pin(pump->gpio); 
     gpio_set_direction(pump->gpio, GPIO_MODE_INPUT_OUTPUT);
 }
@@ -120,11 +118,6 @@ esp_err_t heizung_api_pumps(httpd_req_t *req){
     */
     if(!rest_api_recv(req))
         return ESP_FAIL;
-    /*
-        A single function that handles authentication and error replies towards the client 
-    */
-    if(!rest_api_authenticate(req, rest_api_users, REST_USER_PERMISSION_RW))
-        return ESP_FAIL;
 
     int8_t status = 0;
     const char* json_tmp_pump_all = "{\"status\":%.1d, \"pumps\":[%s]}";
@@ -137,10 +130,34 @@ esp_err_t heizung_api_pumps(httpd_req_t *req){
         return ESP_FAIL;
     }
     strcpy(parr, "");
+    
     // Build JSON
     char* parre = (char*)malloc(parrebuff);
     if(!parre){
         httpd_resp_send_500(req);
+        return ESP_FAIL;
+    }
+    /*
+        Handle GET variables
+    */
+    size_t queryLen = httpd_req_get_url_query_len(req) + 1;
+    char* query = NULL;
+    if(queryLen > 1){
+        query = (char*)malloc(queryLen);
+        if(!query){
+            httpd_resp_send_500(req);
+            return ESP_FAIL;
+        }
+        // Get the query
+        httpd_req_get_url_query_str(req, query, queryLen);
+    }
+
+    const size_t rvbuffLen = 24;
+    char* rvbuff = (char*)malloc(rvbuffLen);
+    if(rvbuff == NULL){
+        httpd_resp_send_500(req);
+        free(parr);
+        free(parre);
         return ESP_FAIL;
     }
 
@@ -148,23 +165,15 @@ esp_err_t heizung_api_pumps(httpd_req_t *req){
         /*
             Headervariablen überprüfen um Pumpe zu schalten
         */
-        size_t len = httpd_req_get_hdr_value_len(req, allpumps[a]->name);
+        //size_t len = httpd_req_get_hdr_value_len(req, allpumps[a]->name);
         // Don't care about the useless relay
-        if(len > 0 && allpumps[a]->gpio != redundancy1.gpio){
-            char* rvbuff = (char*)malloc(++len);
-            if(rvbuff == NULL){
-                httpd_resp_send_500(req);
-                free(parr);
-                free(parre);
-                return ESP_FAIL;
-            }
-            esp_err_t err = httpd_req_get_hdr_value_str(req, allpumps[a]->name, rvbuff, len);
+        if(allpumps[a]->gpio != redundancy1.gpio){
+            esp_err_t err = httpd_query_key_value(query, allpumps[a]->name, rvbuff, rvbuffLen);
             if(err == ESP_OK){
                 int gs = atoi(rvbuff);
                 gpio_set_level(allpumps[a]->gpio, gs ? PUMP_OFF : PUMP_ON);
                 ESP_LOGI(PUMPTAG, "%s ist jetzt %s", allpumps[a]->name, gs ? "Aus" : "Ein");
             }
-            free(rvbuff);
         }
 
         // Creating JSON
@@ -176,6 +185,9 @@ esp_err_t heizung_api_pumps(httpd_req_t *req){
         if(a != PUMPENANZAHL - 1)
             strcat(parr, ",");
     }
+    free(rvbuff);
+    rvbuff = NULL;
+
     free(parre);
     char* reply = (char*)malloc(strlen(json_tmp_pump_all) + parrebuff * PUMPENANZAHL);
     strcpy(reply, "");

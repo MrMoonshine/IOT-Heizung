@@ -1,0 +1,218 @@
+[15:38:01.421] tio v2.6
+[15:38:01.421] Press ctrl-t q to quit
+[15:38:01.537] Connected
+ets Jun  8 2016 00:22:57
+
+rst:0x1 (POWERON_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0030,len:6940
+ho 0 tail 12 room 4
+load:0x40078000,len:15500
+load:0x40080400,len:3844
+entry 0x4008064c
+[0;32mI (29) boot: ESP-IDF 5.0.2 2nd stage bootloader[0m
+[0;32mI (29) boot: compile time 15:23:51[0m
+[0;32mI (29) boot: chip revision: v1.0[0m
+[0;32mI (31) boot.esp32: SPI Speed      : 40MHz[0m
+[0;32mI (36) boot.esp32: SPI Mode       : DIO[0m
+[0;32mI (41) boot.esp32: SPI Flash Size : 4MB[0m
+[0;32mI (45) boot: Enabling RNG early entropy source...[0m
+[0;32mI (51) boot: Partition Table:[0m
+[0;32mI (54) boot: ## Label            Usage          Type ST Offset   Length[0m
+[0;32mI (61) boot:  0 nvs              WiFi data        01 02 00009000 00006000[0m
+[0;32mI (69) boot:  1 phy_init         RF data          01 01 0000f000 00001000[0m
+[0;32mI (76) boot:  2 factory          factory app      00 00 00010000 00100000[0m
+[0;32mI (84) boot: End of partition table[0m
+[0;32mI (88) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=234f8h (144632) map[0m
+[0;32mI (149) esp_image: segment 1: paddr=00033520 vaddr=3ffb0000 size=0346ch ( 13420) load[0m
+[0;32mI (154) esp_image: segment 2: paddr=00036994 vaddr=40080000 size=09684h ( 38532) load[0m
+[0;32mI (170) esp_image: segment 3: paddr=00040020 vaddr=400d0020 size=89d00h (564480) map[0m
+[0;32mI (375) esp_image: segment 4: paddr=000c9d28 vaddr=40089684 size=0c8a4h ( 51364) load[0m
+[0;32mI (407) boot: Loaded app from partition at offset 0x10000[0m
+[0;32mI (407) boot: Disabling RNG early entropy source...[0m
+[0;32mI (419) cpu_start: Pro cpu up.[0m
+[0;32mI (419) cpu_start: Starting app cpu, entry point is 0x40081df0[0m
+[0;32mI (0) cpu_start: App cpu up.[0m
+[0;32mI (435) cpu_start: Pro cpu start user code[0m
+[0;32mI (435) cpu_start: cpu freq: 160000000 Hz[0m
+[0;32mI (435) cpu_start: Application information:[0m
+[0;32mI (440) cpu_start: Project name:     ESP32[0m
+[0;32mI (445) cpu_start: App version:      00d496a-dirty[0m
+[0;32mI (450) cpu_start: Compile time:     Jul 18 2023 15:23:01[0m
+[0;32mI (456) cpu_start: ELF file SHA256:  0c98ce8ff5a84fe9...[0m
+[0;32mI (462) cpu_start: ESP-IDF:          5.0.2[0m
+[0;32mI (467) cpu_start: Min chip rev:     v0.0[0m
+[0;32mI (472) cpu_start: Max chip rev:     v3.99 [0m
+[0;32mI (477) cpu_start: Chip rev:         v1.0[0m
+[0;32mI (482) heap_init: Initializing. RAM available for dynamic allocation:[0m
+[0;32mI (489) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM[0m
+[0;32mI (495) heap_init: At 3FFB7138 len 00028EC8 (163 KiB): DRAM[0m
+[0;32mI (501) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM[0m
+[0;32mI (507) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM[0m
+[0;32mI (514) heap_init: At 40095F28 len 0000A0D8 (40 KiB): IRAM[0m
+[0;32mI (521) spi_flash: detected chip: generic[0m
+[0;32mI (525) spi_flash: flash io: dio[0m
+[0;33mW (529) rmt(legacy): legacy driver is deprecated, please migrate to `driver/rmt_tx.h` and/or `driver/rmt_rx.h`[0m
+[0;33mW (539) ADC: legacy driver is deprecated, please migrate to `esp_adc/adc_oneshot.h`[0m
+[0;32mI (548) cpu_start: Starting scheduler on PRO CPU.[0m
+[0;32mI (0) cpu_start: Starting scheduler on APP CPU.[0m
+[0;32mI (559) gpio: GPIO[15]| InputEn: 0| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 [0m
+[0;32mI (569) gpio: GPIO[2]| InputEn: 0| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 [0m
+[0;32mI (579) gpio: GPIO[4]| InputEn: 0| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 [0m
+[0;32mI (589) gpio: GPIO[16]| InputEn: 0| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 [0m
+[0;32mI (599) gpio: GPIO[18]| InputEn: 0| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 [0m
+[0;32mI (609) gpio: GPIO[19]| InputEn: 0| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 [0m
+[0;32mI (619) Pumpensteuerung: Initial States: -58[0m
+[0;32mI (619) Pumpensteuerung: Setting states to: 39
+[0m
+[0;32mI (629) Pumpensteuerung: heizpumpe ist jetzt Ein[0m
+[0;32mI (629) Pumpensteuerung: bufferpumpe ist jetzt Ein[0m
+[0;32mI (639) Pumpensteuerung: zwischenpumpe ist jetzt Ein[0m
+[0;32mI (639) Pumpensteuerung: waermepumpe ist jetzt Ein[0m
+[0;32mI (649) Heizung: Pumpen Gestartet[0m
+[1;31m[E] Alpaka 57
+[0mI (709) wifi:wifi driver task: 3ffbf7a0, prio:23, stack:6656, core=0
+[0;32mI (709) system_api: Base MAC address is not set[0m
+[0;32mI (709) system_api: read default base MAC address from EFUSE[0m
+I (739) wifi:wifi firmware version: 57982fe
+I (739) wifi:wifi certification version: v7.0
+I (739) wifi:config NVS flash: enabled
+I (739) wifi:config nano formating: disabled
+I (739) wifi:Init data frame dynamic rx buffer num: 32
+I (749) wifi:Init management frame dynamic rx buffer num: 32
+I (749) wifi:Init management short buffer num: 32
+I (759) wifi:Init dynamic tx buffer num: 32
+I (759) wifi:Init static rx buffer size: 1600
+I (769) wifi:Init static rx buffer num: 10
+I (769) wifi:Init dynamic rx buffer num: 32
+[0;32mI (769) wifi_init: rx ba win: 6[0m
+[0;32mI (779) wifi_init: tcpip mbox: 32[0m
+[0;32mI (779) wifi_init: udp mbox: 6[0m
+[0;32mI (789) wifi_init: tcp mbox: 6[0m
+[0;32mI (789) wifi_init: tcp tx win: 5744[0m
+[0;32mI (789) wifi_init: tcp rx win: 5744[0m
+[0;32mI (799) wifi_init: tcp mss: 1440[0m
+[0;32mI (799) wifi_init: WiFi IRAM OP enabled[0m
+[0;32mI (809) wifi_init: WiFi RX IRAM OP enabled[0m
+[0;32mI (809) WiFi-Handler: Connecting via SSID:	fritz_burr[0m
+[0;32mI (839) phy_init: phy_version 4670,719f9f6,Feb 18 2021,17:07:07[0m
+I (939) wifi:mode : sta (80:7d:3a:b7:54:40)
+I (939) wifi:enable tsf
+E (949) wifi:sta is connecting, return error
+[0;32mI (949) WiFi-Handler: Wifi statred successfully![0m
+[0;32mI (949) Heizung: WiFi gestartet[0m
+I (949) wifi:new:<1,0>, old:<1,0>, ap:<255,255>, sta:<1,0>, prof:1
+I (1639) wifi:state: init -> auth (b0)
+I (1649) wifi:state: auth -> assoc (0)
+[0;32mI (1649) Heizung: REST API gestartet[0m
+[0;32mI (1649) gpio: GPIO[17]| InputEn: 0| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 [0m
+I (1649) wifi:state: assoc -> run (10)
+[0;32mI (1659) gpio: GPIO[5]| InputEn: 0| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 [0m
+I (1669) wifi:connected with fritz_burr, aid = 5, channel 1, BW20, bssid = 5c:49:79:d4:b0:07
+I (1669) wifi:security: WPA2-PSK, phy: bgn, rssi: -40
+[0;32mI (1679) Heizung: Starte One-Wire Bus...[0m
+I (1689) wifi:pm start, type: 1
+
+[0;32mI (1689) Heizung: One-Wire Bus wird konfiguriert...[0m
+I (1699) wifi:<ba-add>idx:0 (ifx:0, 5c:49:79:d4:b0:07), tid:0, ssn:0, winSize:64
+[0;32mI (1699) esp_netif_handlers: sta ip: 10.0.0.31, mask: 255.255.255.0, gw: 10.0.0.130[0m
+I (1749) wifi:AP's beacon interval = 102400 us, DTIM period = 1
+[0;31mE (1809) owb_rmt: rx_items == 0[0m
+Parasitic-powered devices detected
+[0;32mI (1809) Heizung: Starte Sensoren...[0m
+[0;31mE (1909) owb_rmt: rx_items == 0[0m
+[0;31mE (1909) ds18b20: ds18b20 device not responding[0m
+[0;31mE (2009) owb_rmt: rx_items == 0[0m
+[0;31mE (2009) ds18b20: ds18b20 device not responding[0m
+[0;31mE (2109) owb_rmt: rx_items == 0[0m
+[0;31mE (2109) ds18b20: ds18b20 device not responding[0m
+[0;31mE (2209) owb_rmt: rx_items == 0[0m
+[0;31mE (2209) ds18b20: ds18b20 device not responding[0m
+[0;33mW (2209) ds18b20: Resolution consistency lost - refreshed from device: 9[0m
+[0;31mE (2309) owb_rmt: rx_items == 0[0m
+[0;31mE (2309) ds18b20: ds18b20 device not responding[0m
+[0;31mE (2409) owb_rmt: rx_items == 0[0m
+[0;31mE (2409) ds18b20: ds18b20 device not responding[0m
+[0;31mE (2509) owb_rmt: rx_items == 0[0m
+[0;31mE (2509) ds18b20: ds18b20 device not responding[0m
+[0;31mE (2609) owb_rmt: rx_items == 0[0m
+[0;31mE (2609) ds18b20: ds18b20 device not responding[0m
+[0;33mW (2609) ds18b20: Resolution consistency lost - refreshed from device: 9[0m
+[0;31mE (2709) owb_rmt: rx_items == 0[0m
+[0;31mE (2709) ds18b20: ds18b20 device not responding[0m
+[0;31mE (2809) owb_rmt: rx_items == 0[0m
+[0;31mE (2809) ds18b20: ds18b20 device not responding[0m
+[0;31mE (2909) owb_rmt: rx_items == 0[0m
+[0;31mE (2909) ds18b20: ds18b20 device not responding[0m
+[0;31mE (3009) owb_rmt: rx_items == 0[0m
+[0;31mE (3009) ds18b20: ds18b20 device not responding[0m
+[0;33mW (3009) ds18b20: Resolution consistency lost - refreshed from device: 9[0m
+[0;31mE (3109) owb_rmt: rx_items == 0[0m
+[0;31mE (3109) ds18b20: ds18b20 device not responding[0m
+[0;31mE (3209) owb_rmt: rx_items == 0[0m
+[0;31mE (3209) ds18b20: ds18b20 device not responding[0m
+[0;31mE (3309) owb_rmt: rx_items == 0[0m
+[0;31mE (3309) ds18b20: ds18b20 device not responding[0m
+[0;31mE (3409) owb_rmt: rx_items == 0[0m
+[0;31mE (3409) ds18b20: ds18b20 device not responding[0m
+[0;33mW (3409) ds18b20: Resolution consistency lost - refreshed from device: 9[0m
+[0;31mE (3509) owb_rmt: rx_items == 0[0m
+[0;31mE (3509) ds18b20: ds18b20 device not responding[0m
+[0;31mE (3609) owb_rmt: rx_items == 0[0m
+[0;31mE (3609) ds18b20: ds18b20 device not responding[0m
+[0;31mE (3709) owb_rmt: rx_items == 0[0m
+[0;31mE (3709) ds18b20: ds18b20 device not responding[0m
+[0;31mE (3809) owb_rmt: rx_items == 0[0m
+[0;31mE (3809) ds18b20: ds18b20 device not responding[0m
+[0;33mW (3809) ds18b20: Resolution consistency lost - refreshed from device: 9[0m
+[0;31mE (3909) owb_rmt: rx_items == 0[0m
+[0;31mE (3909) ds18b20: ds18b20 device not responding[0m
+[0;31mE (4009) owb_rmt: rx_items == 0[0m
+[0;31mE (4009) ds18b20: ds18b20 device not responding[0m
+[0;31mE (4109) owb_rmt: rx_items == 0[0m
+[0;31mE (4109) ds18b20: ds18b20 device not responding[0m
+[0;31mE (4209) owb_rmt: rx_items == 0[0m
+[0;31mE (4209) ds18b20: ds18b20 device not responding[0m
+[0;33mW (4209) ds18b20: Resolution consistency lost - refreshed from device: 9[0m
+[0;31mE (4309) owb_rmt: rx_items == 0[0m
+[0;31mE (4309) ds18b20: ds18b20 device not responding[0m
+[0;31mE (4409) owb_rmt: rx_items == 0[0m
+[0;31mE (4409) ds18b20: ds18b20 device not responding[0m
+[0;31mE (4509) owb_rmt: rx_items == 0[0m
+[0;31mE (4509) ds18b20: ds18b20 device not responding[0m
+[0;31mE (4609) owb_rmt: rx_items == 0[0m
+[0;31mE (4609) ds18b20: ds18b20 device not responding[0m
+[0;33mW (4609) ds18b20: Resolution consistency lost - refreshed from device: 9[0m
+[0;32mI (8609) Heizung: Messungen werden durchgeführt
+PumpStates:57[0m
+[0;31mE (8709) owb_rmt: rx_items == 0[0m
+[0;33mW (8709) OneWireBus: Sensor nicht gefunden: 7f01144ee493aa28[0m
+[0;32mI (8709) OneWireBus: Tbrown = -2048.00[0m
+[0;31mE (8809) owb_rmt: rx_items == 0[0m
+[0;33mW (8809) OneWireBus: Sensor nicht gefunden: 7a01144ebc89aa28[0m
+[0;32mI (8809) OneWireBus: Twhite = -2048.00[0m
+[0;31mE (8909) owb_rmt: rx_items == 0[0m
+[0;33mW (8909) OneWireBus: Sensor nicht gefunden: 6701144ef363aa28[0m
+[0;32mI (8909) OneWireBus: Tyellow = -2048.00[0m
+[0;31mE (9009) owb_rmt: rx_items == 0[0m
+[0;33mW (9009) OneWireBus: Sensor nicht gefunden: e101144ef57aaa28[0m
+[0;32mI (9009) OneWireBus: Tgreen = -2048.00[0m
+[0;31mE (9109) owb_rmt: rx_items == 0[0m
+[0;33mW (9109) OneWireBus: Sensor nicht gefunden: 6f01144ec552aa28[0m
+[0;32mI (9109) OneWireBus: Tred = -2048.00[0m
+[0;31mE (9209) owb_rmt: rx_items == 0[0m
+[0;33mW (9209) OneWireBus: Sensor nicht gefunden: 8701144ec5a1aa28[0m
+[0;32mI (9209) OneWireBus: Tblue = -2048.00[0m
+[0;31mE (9309) owb_rmt: rx_items == 0[0m
+[0;33mW (9309) OneWireBus: Sensor nicht gefunden: a400000bc9259d28[0m
+[0;32mI (9309) OneWireBus: Troom = -2048.00[0m
+[0;32mI (9309) OneWireBus: Rt has 718 Ohms
+[0m
+[0;32mI (9309) OneWireBus: T = 81.79 °C
+[0m
+[0;33mW (9319) Solar: Ungültige Messwerte! Solarpumpe bleibt im gleichen Zustand[0m
+[0;32mI (9329) Heizung: Solarpumpe evaluiert[0m
+
+[15:38:26.666] Disconnected

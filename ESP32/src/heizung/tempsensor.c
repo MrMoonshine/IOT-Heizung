@@ -163,12 +163,17 @@ static const adc_bits_width_t width = ADC_WIDTH_BIT_12;
 static const adc_channel_t channel = ADC1_CHANNEL_0;
 static esp_adc_cal_characteristics_t *calli;
 
-int tempGetRt(){
+int tempGetRt(uint32_t* v_i, int* Rt_i){
     uint32_t vin = esp_adc_cal_raw_to_voltage(adc1_get_raw(channel),calli);
+    if(v_i)
+        *v_i = vin;
     if(vin >= ANALTEMP_SOLAR_VDD)
     return -1;
     
-    return (float)(vin*ANALTEMP_SOLAR_RV)/(float)(ANALTEMP_SOLAR_VDD-vin);
+    int Rt = (float)(vin*ANALTEMP_SOLAR_RV)/(float)(ANALTEMP_SOLAR_VDD-vin);
+    if(Rt_i)
+        *Rt_i = Rt;
+    return Rt;
 }
 
 void temp_analog_init(){
@@ -185,8 +190,8 @@ void temp_analog_init(){
     adc1_config_channel_atten(channel,atten);
 }
 
-float temp_analog_read(){
-    int Rt = tempGetRt();
+float temp_analog_read(uint32_t* v_i, int* Rt_i){
+    int Rt = tempGetRt(v_i, Rt_i);
     if(Rt < 0){
         ESP_LOGE(TAG,"Sensor disconnected or shortcutted!");
         return ESP_ERR_INVALID_ARG;
@@ -236,7 +241,7 @@ esp_err_t heizung_api_temperatures(httpd_req_t *req){
         elem = elem->next;
     }
     memset(tj, 0, templen);
-    sprintf(tj, "\"solar\":%.2f}", temp_analog_read());
+    sprintf(tj, "\"solar\":%.2f}", temp_analog_read(NULL, NULL));
     strcat(reply, tj);
     free(tj);
 

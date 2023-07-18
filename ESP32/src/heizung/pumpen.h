@@ -1,5 +1,6 @@
 #ifndef PUMPEN_H
 #define PUMPEN_H
+#include <rest.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_system.h"
@@ -8,7 +9,7 @@
 #include "driver/gpio.h"
 #include "../wifi.h"
 #include <stdbool.h>
-#include <rest.h>
+
 typedef int8_t pump_states_t;
 /*
     Der zustand von allen Pumpen wird im NVS flash gespeichert.

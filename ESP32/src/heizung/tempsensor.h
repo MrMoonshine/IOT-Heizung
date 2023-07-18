@@ -16,7 +16,7 @@
 #include "romcodes.h"
 
 // 50 Sekunden
-#define TEMPSENSOR_READ_INTERVAL 50
+#define TEMPSENSOR_READ_INTERVAL 70
 // Max length of a sensor name
 #define TEMPSENSOR_NAME_LEN 8
 
@@ -65,9 +65,11 @@ void tempDoSettings(OneWireBus *owb);
 void temp_analog_init();
 /*
     @brief Analogen Sensor Lesen (Zum Glück gibts da nur die Solar ;) )
+    @param v Spannung am ADC in mV. NULL = ingnore
+    @param Rt Wiederstand am ADC. NULL = ingnore
     @return Temperatur in °C
 */
-float temp_analog_read();
+float temp_analog_read(uint32_t* v_i, int* Rt_i);
 /*
     @brief API Callback
 */

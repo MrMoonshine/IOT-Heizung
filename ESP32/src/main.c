@@ -7,8 +7,6 @@
 #include "sdkconfig.h"
 
 #include "wifi.h"
-#include <rest.h>
-#include <string.h>
 // Users for Rest API.
 #include "/home/david/.secrets/heizung.h"
 #ifndef HEIZUNG_USER
@@ -22,9 +20,11 @@
 #include "heizung/pumpen.h"
 #include "heizung/romcodes.h"
 #include "heizung/solar.h"
-#include "core/timer.h"
 
-static const char *HOSTNAME = "heizung";
+#include <rest.h>
+#include <string.h>
+
+//static const char *HOSTNAME = "heizung";
 
 #define GPIO_ONE_WIRE TEMPERATURE_GPIO
 #define MAX_DEVICES 11
@@ -82,14 +82,14 @@ void heatact(void *args){
         }
         // TEMPORARILY DISABLE. PUMP MUST BE SET MANUALLY
         //Set the Solarpump according to temperatures
-        blocker = solarSetByTemp(temp_analog_read(), tbuffer_vorlauf, tsolar_vorlauf, tsolar_rucklauf);
+        blocker = solarSetByTemp(temp_analog_read(NULL, NULL), tbuffer_vorlauf, tsolar_vorlauf, tsolar_rucklauf);
         ESP_LOGI(TAG,"Solarpumpe evaluiert");
     }else{
         blocker--;
     }
     
     //pumpsWrite(pumpsDefault());
-    mdns_hostname_set(HOSTNAME);
+    //mdns_hostname_set(HOSTNAME);
 }
 
 esp_err_t heizung_api_solarauto(httpd_req_t *req){
@@ -101,32 +101,59 @@ esp_err_t heizung_api_solarauto(httpd_req_t *req){
     /*
         A single function that handles authentication and error replies towards the client 
     */
-    if(!rest_api_authenticate(req, rest_api_users, REST_USER_PERMISSION_RW))
+    if(!rest_api_authenticate(req, rest_user_list(), REST_USER_PERMISSION_RW))
         return ESP_FAIL;
 
     const char* solarautokey = "manuell";
-    size_t len = httpd_req_get_hdr_value_len(req, solarautokey);
-    if(len > 0){
-        char* rvbuff = (char*)malloc(++len);
-        if(rvbuff == NULL){
+    // Allocade length accordingly
+    size_t queryLen = httpd_req_get_url_query_len(req) + 1;
+    if(queryLen > 1){
+        char* query;
+        query = (char*)malloc(queryLen);
+        if(!query){
             httpd_resp_send_500(req);
             return ESP_FAIL;
         }
-        esp_err_t err = httpd_req_get_hdr_value_str(req, solarautokey, rvbuff, len);
-        if(err == ESP_OK){
-            int as = atoi(rvbuff);
+        // Safe copy query string
+        httpd_req_get_url_query_str(req, query, queryLen);
+
+        const size_t rvbuffLen = 24;
+        char* rvbuff = (char*)malloc(rvbuffLen);
+        if(rvbuff == NULL){
+            free(query);
+            httpd_resp_send_500(req);
+            return ESP_FAIL;
+        }
+        memset(rvbuff, ' ', rvbuffLen);
+        if(ESP_OK == httpd_query_key_value(query, solarautokey, rvbuff, rvbuffLen)){
+            int manually = atoi(rvbuff);
             // Set automatic mode. Invert manual
-            solar_auto = !as;
+            solar_auto = manually < 1;
         }
         free(rvbuff);
+        free(query);
+        query = NULL;
     }
+
+    int solar_ADC_Rt = 0;
+    uint32_t solar_ADC_U = 0;
+    float solar_ADC_Temp = 0;
+    solar_ADC_Temp = temp_analog_read(&solar_ADC_U, &solar_ADC_Rt);
     
-    const char* json_tmp = "{\"status\":%.1d, \"modus\":\"%s\"}";
-    size_t rlen = strlen(json_tmp) + 16;
+    const char* json_tmp = "{\"status\":%.1d, \"modus\":\"%s\", \"adc_U_mV\": %u, \"adc_R_Ohm\": %d, \"adc_T_C\": %.2f}";
+    size_t rlen = strlen(json_tmp) + 16 + 8 + 8 + 8;
     // Send back buffer
     char* reply = (char*)malloc(rlen);
     strcpy(reply, "");
-    sprintf(reply, json_tmp, 0, solar_auto ? "automatisch" : solarautokey);
+    sprintf(
+        reply,
+        json_tmp,
+        0,
+        solar_auto ? "automatisch" : solarautokey,
+        (unsigned int)solar_ADC_U,
+        solar_ADC_Rt,
+        solar_ADC_Temp
+    );
 
     httpd_resp_set_type(req, "text/json");
     httpd_resp_send(req, reply, strlen(reply));
@@ -143,10 +170,6 @@ esp_err_t heizung_api_solarauto(httpd_req_t *req){
 |_| \)\  /( __.' `----'     `-'   
     (__)(__)                      
 */
-/*
-    @brief Linked List mit allen Benutzern
-*/
-extern rest_user_t *rest_api_users;
 // Reset reason
 static httpd_uri_t uri_reset = {
     .uri      = "/api/reset",
@@ -173,16 +196,9 @@ static httpd_uri_t uri_pumps = {
     .user_ctx = NULL
 };
 
-static httpd_uri_t uri_pumps_post = {
-    .uri      = "/api/pumps",
-    .method   = HTTP_POST,
-    .handler  = heizung_api_pumps,
-    .user_ctx = NULL
-};
-
 static httpd_uri_t uri_pumps_solar = {
     .uri      = "/api/solar",
-    .method   = HTTP_POST,
+    .method   = HTTP_GET,
     .handler  = heizung_api_solarauto,
     .user_ctx = NULL
 };
@@ -198,16 +214,15 @@ void app_main(){
     wifiInit();
     ESP_LOGI(TAG, "WiFi gestartet");
     // Setup REST
-    rest_api_users = NULL;
+    rest_user_t* rest_api_users = rest_user_list();
     rest_user_add(&rest_api_users, HEIZUNG_USER, HEIZUNG_PASSWORD, REST_USER_PERMISSION_RW);
     //Hostname
-    rest_api_mdns(HOSTNAME);
+    //rest_api_mdns(HOSTNAME);
     // Add resources
     rest_api_t *api = NULL;
     rest_api_add(&api, &uri_reset);
     rest_api_add(&api, &uri_temperatures);
     rest_api_add(&api, &uri_pumps);
-    rest_api_add(&api, &uri_pumps_post);
     rest_api_add(&api, &uri_pumps_solar);
     // Start server
     rest_api_start_server(api);
@@ -215,11 +230,11 @@ void app_main(){
     // Delete API object. Keep user object!!!
     rest_api_delete(&api);
     //Disable Mixer Relays
-    gpio_pad_select_gpio(17);
+    //gpio_pad_select_gpio(17);
     gpio_reset_pin(17); 
     gpio_set_direction(17, GPIO_MODE_OUTPUT);
     gpio_set_level(17,1);
-    gpio_pad_select_gpio(5);
+    //gpio_pad_select_gpio(5);
     gpio_reset_pin(5); 
     gpio_set_direction(5, GPIO_MODE_OUTPUT);
     gpio_set_level(5,1);
@@ -241,15 +256,13 @@ void app_main(){
     ESP_ERROR_CHECK_WITHOUT_ABORT(temp_owb_add_all(owb));
     //Init Analog Temperature Meassurement
     temp_analog_init();
-    // Every minute: read temperatures + renew mDNS record
-    timerInit(TEMPSENSOR_READ_INTERVAL, &heatact);
 
     //Give the Wifi some time to initialize
-    vTaskDelay(800 / portTICK_PERIOD_MS);
-    //Fetch inistial states:
-    heatact(NULL);
+    vTaskDelay(4000 / portTICK_PERIOD_MS);
+    
     while(1){
-        //Used to avoid watchdog errors
-        vTaskDelay(10 / portTICK_PERIOD_MS); 
+        heatact(NULL);
+        //Wait a minute
+        vTaskDelay(TEMPSENSOR_READ_INTERVAL * 1000 / portTICK_PERIOD_MS);
     }    
 }
