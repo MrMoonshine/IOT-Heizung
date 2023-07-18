@@ -25,7 +25,6 @@
     </nav>
         <div class="container">
             <h3>Pumpensteuerung</h3>
-            <p>Test. Keine echten daten!</p>
             <div class="table-responsive">
                 <table class="table" id="pumptable">
                     <thead>
@@ -37,8 +36,13 @@
                     </thead>
                     <tbody>
                             <?php
+                                // Log all errors
+                                ini_set('display_errors', 1);
+                                ini_set('display_startup_errors', 1);
+                                error_reporting(E_ALL);
+
                                 require "/home/david/.confidential/databaseAccess.php";
-                                $pumppyload="";
+                                /*$pumppyload="";
                                 $header = [
                                     'Authorization: Basic '.base64_encode($username.":".$password),
                                     'Connection: close'
@@ -61,36 +65,60 @@
                                 );
                                 $context = stream_context_create($opts);
 
-                                $result = file_get_contents('http://heizung/api/pumps', false, $context);
+                                $result = file_get_contents('http://heizung/api/pumps', false, $context);*/
+                                $ch = curl_init();
+                                // set url
+                                curl_setopt($ch, CURLOPT_URL, "http://heizung/api/pumps?".http_build_query($_POST));
+                                //echo("http://heizung/api/pumps?".http_build_query($_POST));
+                                //return the transfer as a string
+                                curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+                                // Authentication
+                                curl_setopt($ch, CURLOPT_USERPWD, $username . ":" . $password);
+                                // Ingore certificate values
+                                curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+                                curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+                                $result = curl_exec($ch);
+                                if(curl_error($ch)){
+                                    echo curl_error($ch);
+                                }else{
+                                    $statuscode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                                    if($statuscode != 200){
+                                        echo("<b>Error ".$statuscode.":</b> <code>".$result."</code>");
+                                    }
+                                }
+
+                                curl_close($ch);
                                 $jdata = json_decode($result);
                                 //var_dump($result);
-                                foreach ($jdata->pumps as $a) {
-                                    $name = $a->name;
-                                    echo '<tr>';
-                                    echo('<th scope="row">'.$name.'</th>');
-                                    echo('<td>');
-                                    if($a->state == 0){
-                                        echo('<span class="badge rounded-pill text-bg-success">Ein</span>');
-                                    }else{
-                                        echo('<span class="badge rounded-pill text-bg-danger">Aus</span>');
+                                if(property_exists($jdata, "pumps")){
+                                    foreach ($jdata->pumps as $a) {
+                                        $name = $a->name;
+                                        echo '<tr>';
+                                        echo('<th scope="row">'.$name.'</th>');
+                                        echo('<td>');
+                                        if($a->state == 0){
+                                            echo('<span class="badge rounded-pill text-bg-success">Ein</span>');
+                                        }else{
+                                            echo('<span class="badge rounded-pill text-bg-danger">Aus</span>');
+                                        }
+                                        echo('</td>');
+                                        
+                                        echo <<<END
+                                        <td class="d-flex">
+                                        <form method="POST">
+                                            <input type="text" name="pump" value="$name" readonly hidden/>
+                                            <input type="number" name="state" value="0" readonly hidden/>
+                                            <input type="submit" class="btn btn-success" value="Ein"/>
+                                        </form>
+                                        <form method="POST">
+                                            <input type="text" name="pump" value="$name" readonly hidden/>
+                                            <input type="number" name="state" value="1" readonly hidden/>
+                                            <input type="submit" class="btn btn-danger" value="Aus"/>
+                                        </form>
+                                        </td>
+                                        END;
+                                        echo '</tr>';
                                     }
-                                    echo('</td>');
-                                    
-                                    echo <<<END
-                                    <td class="d-flex">
-                                    <form method="POST">
-                                        <input type="text" name="pump" value="$name" readonly hidden/>
-                                        <input type="number" name="state" value="0" readonly hidden/>
-                                        <input type="submit" class="btn btn-success" value="Ein"/>
-                                    </form>
-                                    <form method="POST">
-                                        <input type="text" name="pump" value="$name" readonly hidden/>
-                                        <input type="number" name="state" value="1" readonly hidden/>
-                                        <input type="submit" class="btn btn-danger" value="Aus"/>
-                                    </form>
-                                    </td>
-                                    END;
-                                    echo '</tr>';
                                 }
                             ?>
                     </tbody>
