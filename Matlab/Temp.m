@@ -23,7 +23,7 @@ disp(PolyString)
 %Create Exponential
 Rtv = linspace(0,Rplotmax,100);
 Rtlog = logspace(0,5,100);
-Rtv
+%Rtv
 R25 = 4530;
 B = 4048.76;
 tex = linspace(-20,100,100);
