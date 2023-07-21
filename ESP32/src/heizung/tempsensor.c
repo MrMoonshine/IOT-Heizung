@@ -2,6 +2,12 @@
 
 static const char* TAG = "OneWireBus";
 
+const float k = 273.15;
+
+static volatile float Rr = 4530;
+static volatile float B = 4048.76;
+static volatile float Tr = 25 + k;
+
 /*
     @brief sensor pointer
 */
@@ -196,13 +202,10 @@ float temp_analog_read(uint32_t* v_i, int* Rt_i){
         ESP_LOGE(TAG,"Sensor disconnected or shortcutted!");
         return ESP_ERR_INVALID_ARG;
     }
-    ESP_LOGI(TAG,"Rt has %d Ohms\n",Rt);
-    const float R25 = 4530;
-    const float B = 4048.76;
-    const float k = 273.15;
-    const float T25 = 25 + k;
+    ESP_LOGI(TAG,"Rt has %d Ohms",Rt);
+    ESP_LOGI(TAG,"Calculating Temperature using: B = %.2f; Tr = %.2f; Rr = %.2f",B, Tr, Rr);
 
-    float p1 = log(Rt / R25) / B + 1.0f/T25;
+    float p1 = log(Rt / Rr) / B + 1.0f/Tr;
     if(p1 == 0){
         ESP_LOGE(TAG,"Durch \"0\" dividiert!");
         return ESP_ERR_INVALID_ARG;
@@ -227,8 +230,11 @@ esp_err_t heizung_api_temperatures(httpd_req_t *req){
     size_t templen = 24;
     size_t replylen = strlen(json_template) + (1 + temp_owb_count_sensors())*templen;
     char* reply = (char*)malloc(replylen);
-    if(!reply)
+    if(!reply){
+        httpd_resp_send_500(req);
+        ESP_LOGE(TAG, "Failed to allocate reply buffer!");
         return ESP_FAIL;
+    }
     memset(reply, 0, replylen);
     strcpy(reply, json_template);
 
@@ -248,6 +254,71 @@ esp_err_t heizung_api_temperatures(httpd_req_t *req){
     httpd_resp_set_type(req, "text/json");
     httpd_resp_send(req, reply, strlen(reply));
 
+    free(reply);
+    return ESP_OK;
+}
+
+esp_err_t heizung_api_ntc(httpd_req_t *req){
+    /*
+        Receives HTTP header data + does some Error handling
+    */
+    if(!rest_api_recv(req))
+        return ESP_FAIL;
+
+    /*
+        Handle GET variables
+    */
+    size_t queryLen = httpd_req_get_url_query_len(req) + 1;
+    char* query = NULL;
+    if(queryLen > 1){
+        query = (char*)malloc(queryLen);
+        if(!query){
+            httpd_resp_send_500(req);
+            return ESP_FAIL;
+        }
+        // Get the query
+        httpd_req_get_url_query_str(req, query, queryLen);
+        //Handle query
+        const size_t rvbuffLen = 24;
+        char* rvbuff = (char*)malloc(rvbuffLen);
+        if(rvbuff == NULL){
+            httpd_resp_send_500(req);
+            free(query);
+            return ESP_FAIL;
+        }
+        // Set parameters if sent as GET var
+        if(httpd_query_key_value(query, "B", rvbuff, rvbuffLen) == ESP_OK){
+            float tmp = atof(rvbuff);
+            if(tmp != 0)
+                B = tmp;
+        }else if(httpd_query_key_value(query, "Tr", rvbuff, rvbuffLen) == ESP_OK){
+            float tmp = atof(rvbuff);
+            if(tmp != 0)
+                Tr = tmp;
+        }else if(httpd_query_key_value(query, "Rr", rvbuff, rvbuffLen) == ESP_OK){
+            float tmp = atof(rvbuff);
+            if(tmp != 0)
+                Rr = tmp;
+        }
+
+        free(rvbuff);
+        free(query);
+    }
+
+    const char* parameters_pattern = "{\"B\":%.2f,\"Tr\":%.2f,\"Rr\":%.2f}";
+    // pattern length + 3 times max float lenght
+    size_t replyLen = strlen(parameters_pattern) + 3*FLT_MAX_10_EXP;
+    char* reply = (char*)malloc(replyLen);
+    if(!reply){
+        httpd_resp_send_500(req);
+        ESP_LOGE(TAG, "Failed to allocate reply buffer!");
+        return ESP_FAIL;
+    }
+
+    sprintf(reply, parameters_pattern, B, Tr, Rr);
+
+    httpd_resp_set_type(req, "text/json");
+    httpd_resp_send(req, reply, strlen(reply));
     free(reply);
     return ESP_OK;
 }

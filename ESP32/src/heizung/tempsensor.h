@@ -1,5 +1,7 @@
 #pragma once
 #include <string.h>
+#include <float.h>
+
 #include <esp_http_server.h>
 #include <rest.h>
 #include <include/owb.h>
@@ -74,3 +76,4 @@ float temp_analog_read(uint32_t* v_i, int* Rt_i);
     @brief API Callback
 */
 esp_err_t heizung_api_temperatures(httpd_req_t *req);
+esp_err_t heizung_api_ntc(httpd_req_t *req);

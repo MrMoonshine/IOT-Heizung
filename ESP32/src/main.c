@@ -203,6 +203,13 @@ static httpd_uri_t uri_pumps_solar = {
     .user_ctx = NULL
 };
 
+static httpd_uri_t uri_ntc = {
+    .uri      = "/api/ntc",
+    .method   = HTTP_GET,
+    .handler  = heizung_api_ntc,
+    .user_ctx = NULL
+};
+
 void app_main(){
     // gpio setup
     pumpsInit();
@@ -224,6 +231,7 @@ void app_main(){
     rest_api_add(&api, &uri_temperatures);
     rest_api_add(&api, &uri_pumps);
     rest_api_add(&api, &uri_pumps_solar);
+    rest_api_add(&api, &uri_ntc);
     // Start server
     rest_api_start_server(api);
     ESP_LOGI(TAG, "REST API gestartet");
