@@ -4,9 +4,114 @@ static const char* TAG = "OneWireBus";
 
 const float k = 273.15;
 
-static volatile float Rr = 4530;
+// Assign default values. Correct ones will be fetched via NTC-API of flash
 static volatile float B = 4048.76;
 static volatile float Tr = 25 + k;
+static volatile float Rr = 4530;
+
+void log_parameters(){
+    ESP_LOGI(TAG,"B = %.2f; Tr = %.2f; Rr = %.2f", B, Tr, Rr);
+}
+// +-----------+--------+--------+--------+
+// | variable: |   B    |   Tr   |   Rr   |
+// +-----------+--------+--------+--------+
+// | length:   | 4Bytes | 4Bytes | 4Bytes |
+// +-----------+--------+--------+--------+
+static const char* FLASH_STORAGE_NAMESPACE = "storage";
+static const char* FLASH_PARAMETER_KEY = "NTC";
+static const size_t FLASH_PARAMETER_SIZE = 3 * sizeof(float);
+/*
+    FLASH-ahh the hero of the universe!
+    stores sensor parameters, to have them ready at next boot.
+*/
+esp_err_t flash_init(){
+    //Using NVS to store factors
+    esp_err_t err = nvs_flash_init();
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        // NVS partition was truncated and needs to be erased
+        // Retry nvs_flash_init
+        ESP_LOGW(TAG, "Clearing flash...\tNVS storage contains no empty pages (which may happen if NVS partition was truncated)");
+        
+        err = nvs_flash_erase();
+        if(err != ESP_OK)
+            return err;
+
+        err = nvs_flash_init();
+        if(err != ESP_OK)
+            return err;
+    }
+    return err;
+}
+// Single read operation
+esp_err_t flash_read_values(){
+    nvs_handle_t handle;
+    esp_err_t err;
+
+    // Open
+    err = nvs_open(FLASH_STORAGE_NAMESPACE, NVS_READWRITE, &handle);
+    if (err != ESP_OK) return err;
+    size_t size;
+    err = nvs_get_blob(handle, FLASH_PARAMETER_KEY, NULL, &size);
+    if(err == ESP_ERR_NVS_NOT_FOUND){
+        ESP_LOGW(TAG, "Parameter wurden noch nicht im flash gespeichert. Abbruch.");
+        return ESP_FAIL;
+    }
+    
+    if(size != FLASH_PARAMETER_SIZE){
+        ESP_LOGW(TAG, "Array in flash has wrong length of %d Bytes", size);
+        return ESP_FAIL;
+    }
+    
+    // Create blob buffer
+    uint8_t* arr = (uint8_t*)malloc(FLASH_PARAMETER_SIZE);
+    if(!arr)
+        return ESP_FAIL;
+    // Get array from flash and put it in float variables
+    nvs_get_blob(handle, FLASH_PARAMETER_KEY, arr, &size);
+
+    float tmp[3];
+    for(uint8_t i = 0; i < 3; i++)
+        memcpy(tmp + i, arr + i*sizeof(float), sizeof(float));
+
+    B = tmp[0];
+    Tr = tmp[1];
+    Rr = tmp[2];
+    log_parameters();
+
+    free(arr);
+    nvs_close(handle);
+    return err;
+}
+// single write operation
+esp_err_t flash_write_values(){
+    nvs_handle_t handle;
+    esp_err_t err;
+
+    // Open
+    err = nvs_open(FLASH_STORAGE_NAMESPACE, NVS_READWRITE, &handle);
+    if (err != ESP_OK) return err;
+    
+    // Create blob buffer
+    uint8_t* arr = (uint8_t*)malloc(FLASH_PARAMETER_SIZE);
+    if(!arr)
+        return ESP_FAIL;
+ 
+    float tmp[3];
+    tmp[0] = B;
+    tmp[1] = Tr;
+    tmp[2] = Rr;
+    memcpy(arr, tmp, FLASH_PARAMETER_SIZE);
+
+    err = nvs_set_blob(handle, FLASH_PARAMETER_KEY, arr, FLASH_PARAMETER_SIZE);
+    if(err != ESP_OK){
+        free(arr);
+        return err;
+    }
+
+    free(arr);
+    nvs_close(handle);
+    return err;
+}
 
 /*
     @brief sensor pointer
@@ -194,6 +299,14 @@ void temp_analog_init(){
 
     adc1_config_width(width);
     adc1_config_channel_atten(channel,atten);
+
+    if(flash_init() != ESP_OK){
+        ESP_LOGW(TAG, "Flash init Error. Fallback to:");
+        log_parameters();
+        return;
+    }
+
+    flash_read_values();
 }
 
 float temp_analog_read(uint32_t* v_i, int* Rt_i){
@@ -265,6 +378,7 @@ esp_err_t heizung_api_ntc(httpd_req_t *req){
     if(!rest_api_recv(req))
         return ESP_FAIL;
 
+    int flashOK = 1;
     /*
         Handle GET variables
     */
@@ -291,23 +405,26 @@ esp_err_t heizung_api_ntc(httpd_req_t *req){
             float tmp = atof(rvbuff);
             if(tmp != 0)
                 B = tmp;
-        }else if(httpd_query_key_value(query, "Tr", rvbuff, rvbuffLen) == ESP_OK){
+        }
+        if(httpd_query_key_value(query, "Tr", rvbuff, rvbuffLen) == ESP_OK){
             float tmp = atof(rvbuff);
             if(tmp != 0)
                 Tr = tmp;
-        }else if(httpd_query_key_value(query, "Rr", rvbuff, rvbuffLen) == ESP_OK){
+        }
+        if(httpd_query_key_value(query, "Rr", rvbuff, rvbuffLen) == ESP_OK){
             float tmp = atof(rvbuff);
             if(tmp != 0)
                 Rr = tmp;
         }
-
         free(rvbuff);
         free(query);
+        // write to flash
+        flashOK = flash_write_values() == ESP_OK ? 0 : -1;
     }
 
-    const char* parameters_pattern = "{\"B\":%.2f,\"Tr\":%.2f,\"Rr\":%.2f}";
+    const char* parameters_pattern = "{\"B\":%.2f,\"Tr\":%.2f,\"Rr\":%.2f,\"flashOK\":%d}";
     // pattern length + 3 times max float lenght
-    size_t replyLen = strlen(parameters_pattern) + 3*FLT_MAX_10_EXP;
+    size_t replyLen = strlen(parameters_pattern) + 3*FLT_MAX_10_EXP + 4;
     char* reply = (char*)malloc(replyLen);
     if(!reply){
         httpd_resp_send_500(req);
@@ -315,7 +432,7 @@ esp_err_t heizung_api_ntc(httpd_req_t *req){
         return ESP_FAIL;
     }
 
-    sprintf(reply, parameters_pattern, B, Tr, Rr);
+    sprintf(reply, parameters_pattern, B, Tr, Rr, flashOK);
 
     httpd_resp_set_type(req, "text/json");
     httpd_resp_send(req, reply, strlen(reply));
