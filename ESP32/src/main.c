@@ -269,8 +269,12 @@ void app_main(){
     vTaskDelay(4000 / portTICK_PERIOD_MS);
     
     while(1){
-        heatact(NULL);
+        /*heatact(NULL);
         //Wait a minute
         vTaskDelay(TEMPSENSOR_READ_INTERVAL * 1000 / portTICK_PERIOD_MS);
+        */
+
+        temp_analog_read(NULL, NULL);
+        vTaskDelay(2500 / portTICK_PERIOD_MS);
     }    
 }

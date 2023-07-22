@@ -269,13 +269,35 @@ void tempDoSettings(OneWireBus *owb){
 
 static const adc_unit_t unit = ADC_UNIT_1;
 static const adc_atten_t atten = ADC_ATTEN_DB_11;
-static const adc_bits_width_t width = ADC_WIDTH_BIT_12;
+static const unsigned short adc_read_len = 128;
 //GPIO 36
 static const adc_channel_t channel = ADC1_CHANNEL_0;
-static esp_adc_cal_characteristics_t *calli;
+static adc_continuous_handle_t adc_handle;
 
 int tempGetRt(uint32_t* v_i, int* Rt_i){
-    uint32_t vin = esp_adc_cal_raw_to_voltage(adc1_get_raw(channel),calli);
+    uint32_t real_len = 0;
+
+    uint8_t adc_buffer[adc_read_len];
+    // Read ADC
+    esp_err_t err = adc_continuous_read(adc_handle, adc_buffer, adc_read_len, &real_len, 0);
+    ESP_ERROR_CHECK_WITHOUT_ABORT(err);
+
+    ESP_LOGI(TAG, "Real len is: %u", (unsigned int)real_len);
+    uint32_t adc_raw = 0;
+    printf("ADC Data is ");
+    for (int i = 0; i < real_len; i += SOC_ADC_DIGI_RESULT_BYTES){
+       adc_digi_output_data_t* output =  (adc_digi_output_data_t*)(adc_buffer + i);
+       uint32_t data = output->type1.data;
+       printf("(1: %u | 2: %u), ", (unsigned int)data, (unsigned int)output->val);
+       adc_raw += data;
+    }
+    printf("\n");
+    adc_raw /= (real_len / SOC_ADC_DIGI_RESULT_BYTES);
+    ESP_LOGI(TAG, "ADC Raw is %u", (unsigned int)adc_raw);
+
+
+    uint32_t vin = adc_raw * ANALTEMP_SOLAR_VDD / (1 << SOC_ADC_DIGI_MAX_BITWIDTH);
+    ESP_LOGI(TAG, "V = %u mV", (unsigned int)vin);
     if(v_i)
         *v_i = vin;
     if(vin >= ANALTEMP_SOLAR_VDD)
@@ -288,17 +310,38 @@ int tempGetRt(uint32_t* v_i, int* Rt_i){
 }
 
 void temp_analog_init(){
-    calli = calloc(1,sizeof(esp_adc_cal_characteristics_t));
-    esp_adc_cal_characterize(
-        unit,
-        atten,
-        width,
-        1100,   //because of atten
-        calli
-    );
+    adc_continuous_handle_cfg_t adc_config = {
+        .max_store_buf_size = 128,
+        .conv_frame_size = adc_read_len
+    };
 
-    adc1_config_width(width);
-    adc1_config_channel_atten(channel,atten);
+    if(adc_continuous_new_handle(&adc_config, &adc_handle) != ESP_OK){
+        ESP_LOGE(TAG, "ADC Init failure!");
+        return;
+    }
+
+    adc_digi_pattern_config_t adc_pattern = {
+        .atten = atten,
+        .channel = channel,
+        .unit = unit,
+        .bit_width = SOC_ADC_DIGI_MAX_BITWIDTH
+    };
+
+    adc_continuous_config_t digi_conf = {
+        .sample_freq_hz = 20 * 1000,
+        .conv_mode = ADC_CONV_SINGLE_UNIT_1,
+        .format = ADC_DIGI_OUTPUT_FORMAT_TYPE1,
+        .pattern_num = 1,
+        .adc_pattern = &adc_pattern
+    };
+
+    if(adc_continuous_config(adc_handle, &digi_conf) != ESP_OK){
+        ESP_LOGE(TAG, "ADC Config failure!");
+        return;
+    }
+
+    adc_continuous_start(adc_handle);
+
 
     if(flash_init() != ESP_OK){
         ESP_LOGW(TAG, "Flash init Error. Fallback to:");
