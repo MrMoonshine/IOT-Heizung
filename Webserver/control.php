@@ -23,6 +23,7 @@
             <div class="navbar-nav">
                 <a class="nav-item nav-link" href="monitoring.html">Monitoring</a>
                 <a class="nav-item nav-link active" href="#">Steuerung</a>
+                <a class="nav-item nav-link" href="solar.php">Solar</a>
                 <a class="nav-item nav-link" href="/">Home</a>
             </div>
         </div>
@@ -122,39 +123,6 @@
                     </tbody>
                 </table>
             </div>
-        </div>
-        <div>
-            <h3>Solarinfo</h3>
-            <?php
-            var_dump($_POST);
-            curl_setopt($ch, CURLOPT_URL, "http://heizung/api/solar");
-            $result = curl_exec($ch);
-            curl_error_verbose($ch, $result);
-            $solarinfo = json_decode($result);
-            $automatic = $solarinfo->modus == "automatisch";
-            //var_dump($solarinfo);
-            ?>
-            <p>
-                Betriebsmodus: <span class="badge rounded-pill text-bg-info"><?php
-                    echo($solarinfo->modus);
-                ?></span>
-            </p>
-            <form method="POST">
-                <input class="d-none" name="path" value="/api/solar">
-                <input class="d-none" name="manuell" value="<?php
-                    echo($automatic ? "1" : "0");
-                ?>"/>
-                <input class="btn btn-warning" type="submit" value="<?php
-                    echo("Ändern zu ".($automatic ? "manuell" : "automatisch"));
-                ?>">
-            </from>
-            <h4>Solar ADC-Info</h4>
-            <p>Das misst der ESP32</p>
-            <ul>
-                <li><b>Temperatur:</b> <?php echo($solarinfo->adc_T_C);?> °C</li>
-                <li><b>Wiederstand:</b> <?php echo($solarinfo->adc_R_Ohm);?> &Omega;</li>
-                <li><b>ADC-Spannung:</b> <?php echo($solarinfo->adc_U_mV/1000);?> V</li>
-            </ul>
         </div>
         <div>
             <h3>Uptime</h3>
