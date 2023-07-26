@@ -20,7 +20,7 @@
 #include "romcodes.h"
 
 // 50 Sekunden
-#define TEMPSENSOR_READ_INTERVAL 70
+#define TEMPSENSOR_READ_INTERVAL 60
 // Max length of a sensor name
 #define TEMPSENSOR_NAME_LEN 8
 
