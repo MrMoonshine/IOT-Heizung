@@ -284,19 +284,23 @@ int tempGetRt(uint32_t* v_i, int* Rt_i){
 
     ESP_LOGI(TAG, "Real len is: %u", (unsigned int)real_len);
     uint32_t adc_raw = 0;
-    printf("ADC Data is ");
+    //printf("ADC Data Samples: ");
     for (int i = 0; i < real_len; i += SOC_ADC_DIGI_RESULT_BYTES){
-       adc_digi_output_data_t* output =  (adc_digi_output_data_t*)(adc_buffer + i);
-       uint32_t data = output->type1.data;
-       printf("(1: %u | 2: %u), ", (unsigned int)data, (unsigned int)output->val);
-       adc_raw += data;
+        uint16_t output = 0;
+        memcpy(&output, adc_buffer + i, sizeof(output));
+        //printf("%x%x (%x), ",(unsigned int)adc_buffer[i], (unsigned int)adc_buffer[i+1], output);
+        //printf("%u, ", output);
+        adc_raw += output;
     }
     printf("\n");
     adc_raw /= (real_len / SOC_ADC_DIGI_RESULT_BYTES);
-    ESP_LOGI(TAG, "ADC Raw is %u", (unsigned int)adc_raw);
+    unsigned int adc_max = (1 << SOC_ADC_DIGI_MAX_BITWIDTH) - 1;
+    //ESP_LOGI(TAG, "ADC Raw is %u\tpercentage: %.2f", (unsigned int)adc_raw, (float)(100*(float)adc_raw/(float)adc_max));
 
 
-    uint32_t vin = adc_raw * ANALTEMP_SOLAR_VDD / (1 << SOC_ADC_DIGI_MAX_BITWIDTH);
+    uint32_t vin = adc_raw * ANALTEMP_SOLAR_VDD / adc_max;
+    // Apparently the ADC measurres around 155mV below the actual voltage
+    vin += 150;
     ESP_LOGI(TAG, "V = %u mV", (unsigned int)vin);
     if(v_i)
         *v_i = vin;
