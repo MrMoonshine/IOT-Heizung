@@ -2,61 +2,53 @@
 %License: MIT
 %2020-11-15
 
+k = 273.15;
 %Masuring results
 Rmat = [];
 Tmat = [];
 
-Rplotmax = 40000;
+Rplotmax = 8000;
 
-csvResult = csvread("NTC_Messdaten.csv");
+% ofset to 2nd row due to title
+csvResult = csvread("samples.csv", 1, 0);
 [csvHeight,csvWidth] = size(csvResult);
 %Load CSV
 for i = 1:(csvHeight/2)
    Tmat = [Tmat csvResult(i,1)];
    Rmat = [Rmat csvResult(i,2)];
 end
-%Create Regression
-RTpolynom = polyfit(Rmat,Tmat,5);
-PolyString = polyout(RTpolynom,'Rt')
-disp(PolyString)
+% Kelvin!
+Tmat = Tmat + k;
+% Get lowest & Highest value from temperature
+[T1, It1] = min(Tmat);
+[T2, It2] = max(Tmat);
+% Get Resistances for them
+R1 = Rmat(It1);
+R2 = Rmat(It2);
+% B
+B = T1*T2/(T2-T1)*log(R1/R2)
+% use values above for rating
+Tr = T2
+Rr = R2
 
 %Create Exponential
 Rtv = linspace(0,Rplotmax,100);
-Rtlog = logspace(0,5,100);
+Rtlog = logspace(1,3,100);
 %Rtv
-R25 = 4530;
-B = 4048.76;
 tex = linspace(-20,100,100);
 k = 273.15;
-T25 = 25 + k;
-%Rntc = R25*(R25.^((1 ./ (tex+273.15))-(1 ./ (25+273.15))));
+% R(T)
+%Rntc = Rr * exp(1/(tex + k) + 1/Tr);
+Rntc = Rr*exp(B*(1./(tex + k) - 1/Tr))
+% T(R)
+Tntc = 1./(log(Rtlog ./ Rr)/B + 1/Tr) - k;
 
-Rntc = R25 .* exp(B .* ((1 ./ (tex .+ k))-(1/T25)));
-%This line Works somehow...
-Tntc = (1 ./ ((log(Rtlog ./ R25) ./ B) .+ 1/T25)) .- k;
-%Tntc = 25 .* exp((B .* ((1 ./ Rtv) .- (1 / R25)))) .- 16;
+Tmat = Tmat - k;
 
-figure(1)
-%Show Measuring Results
-subplot(2,1,1);
-stem(Rmat,Tmat,'linewidth',2,'color','red','filled');
-title('Messwerte der Temperaturfühler');
-ylabel('T [°C]');
-xlabel('R [Ohm]');
-grid on;
+%error("oida")
 
-subplot(2,1,2);
-plot(Rtv ,polyval(RTpolynom,Rtv),'linewidth',2);
-hold on
-scatter(Rmat,Tmat,'filled');
-hold off
-grid on
-legend('Polynomfunktion','Messwerte');
-ylabel('T [°C]');
-xlabel('R [Ohm]');
-title({"Polynomfunktion";PolyString;});
 %Exponential
-figure(2)
+figure(1)
 subplot(2,1,1);
 plot(tex ,Rntc,'linewidth',2,'color','magenta');
 hold on
