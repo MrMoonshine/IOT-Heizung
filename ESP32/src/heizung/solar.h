@@ -19,7 +19,9 @@
 #define SOLAR_BLOCK_CYCLE_AFTER_ENABLE 1
 
 //Diese Differenz muss das solarpannel erreichen um die Pumpe zum einschalten
-static const float SOLAR_TO_BUFF_OFFSET = 10;
+static const float SOLAR_TO_BUFF_OFFSET = 10; //°C
+// Schutz, damit die pumpe nicht einschaltet wenn es zu kalt ist. Die B-Formel ist exponential, und um richtige messwerte zu haben, gibt es den schutz.
+static const float SOLAR_ENABLE_MIN_TEMP = 40.0f; //°C
 /**
  * @brief  Diese Funktion steuert die Solarpumpe mit den gegebenen Temperaturen
  *
