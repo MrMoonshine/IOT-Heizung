@@ -263,6 +263,28 @@ void tempDoSettings(OneWireBus *owb){
 /*---------------------------------------
     Analog Temperature
 ---------------------------------------*/
+#define ANALTEMP_SAMPLE_MEDIAN
+#ifdef ANALTEMP_SAMPLE_MEDIAN
+int compare(const void *a, const void *b){
+    return (int)( *(unsigned int*)a - *(unsigned int*)b );
+}
+
+float median(unsigned int* values, size_t len){
+    if(len < 1){
+        return 0;
+    }
+    qsort(values, len, sizeof(unsigned int), compare);
+    
+    size_t center = len/2;
+    if(len % 2){
+        return values[center];
+    }else{
+        unsigned int ret = values[center++];
+        ret += values[center];
+        return ret / 2;
+    }
+}
+#endif
 
 #define ANALTEMP_SOLAR_RV  4694.0
 #define ANALTEMP_SOLAR_VDD 3300.0
@@ -284,6 +306,20 @@ int tempGetRt(uint32_t* v_i, int* Rt_i){
 
     ESP_LOGI(TAG, "Real len is: %u", (unsigned int)real_len);
     uint32_t adc_raw = 0;
+    #ifdef ANALTEMP_SAMPLE_MEDIAN
+    unsigned int* outputs[adc_read_len];
+
+    for (int i = 0; i < real_len; i += SOC_ADC_DIGI_RESULT_BYTES){
+        uint16_t output = 0;
+        memcpy(&output, adc_buffer + i, sizeof(output));
+        //printf("hex: %x%x\toutput: (%x), ",(unsigned int)adc_buffer[i], (unsigned int)adc_buffer[i+1], output);
+        //printf("out-dec: %u\n", output);
+        outputs[i] = output;
+    }
+    printf("\n");
+    adc_raw = median(outputs, adc_read_len);
+    //ESP_LOGI(TAG, "ADC Raw is hex: %x\tdec: %u", (unsigned int)adc_raw, (unsigned int)adc_raw);
+    #else 
     //printf("ADC Data Samples: ");
     for (int i = 0; i < real_len; i += SOC_ADC_DIGI_RESULT_BYTES){
         uint16_t output = 0;
@@ -294,6 +330,7 @@ int tempGetRt(uint32_t* v_i, int* Rt_i){
     }
     printf("\n");
     adc_raw /= (real_len / SOC_ADC_DIGI_RESULT_BYTES);
+    #endif
     unsigned int adc_max = (1 << SOC_ADC_DIGI_MAX_BITWIDTH) - 1;
     //ESP_LOGI(TAG, "ADC Raw is %u\tpercentage: %.2f", (unsigned int)adc_raw, (float)(100*(float)adc_raw/(float)adc_max));
 
@@ -310,6 +347,7 @@ int tempGetRt(uint32_t* v_i, int* Rt_i){
     int Rt = (float)(vin*ANALTEMP_SOLAR_RV)/(float)(ANALTEMP_SOLAR_VDD-vin);
     if(Rt_i)
         *Rt_i = Rt;
+
     return Rt;
 }
 
@@ -363,17 +401,18 @@ float temp_analog_read(uint32_t* v_i, int* Rt_i){
         return ESP_ERR_INVALID_ARG;
     }
     ESP_LOGI(TAG,"Rt has %d Ohms",Rt);
-    ESP_LOGI(TAG,"Calculating Temperature using: B = %.2f; Tr = %.2f; Rr = %.2f",B, Tr, Rr);
+    log_parameters();
 
     float p1 = log(Rt / Rr) / B + 1.0f/Tr;
+    //ESP_LOGI(TAG, "denumerator is %.2f", p1);
     if(p1 == 0){
         ESP_LOGE(TAG,"Durch \"0\" dividiert!");
         return ESP_ERR_INVALID_ARG;
     }
     //Final Calculation
-    float temp = (1.0f / p1) - k;
-    // Correct it a bit... aka cheating in math
-    temp += 10;
+    float temp = (1.0f / p1);
+    temp -= k;  // Kelvin to °C
+
     ESP_LOGI(TAG,"T = %.2f °C\n",temp);
     return temp;
 }
