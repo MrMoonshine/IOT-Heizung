@@ -9,7 +9,6 @@ uint8_t solarSetByTemp(float solar, float buffer, float vorlauf, float rucklauf)
         buffer      < ZERO_KELVIN ||
         rucklauf    < ZERO_KELVIN ||
         vorlauf     < ZERO_KELVIN ||
-        solar       < SOLAR_ENABLE_MIN_TEMP // Solarpanel is zu kalt zum einschalten
     ){
         ESP_LOGW(SOLARTAG,"Ungültige Messwerte! Solarpumpe bleibt im gleichen Zustand");
         return blocker;
@@ -18,7 +17,10 @@ uint8_t solarSetByTemp(float solar, float buffer, float vorlauf, float rucklauf)
     //Es ist Invertiert weil die Relays der Pumpen invertiert sind
     if(gpio_get_level(PUMP_SOLAR_GPIO)){
         //Solarpump is not running at this point
-        if(solar > buffer + SOLAR_TO_BUFF_OFFSET){
+        if(
+            solar > buffer + SOLAR_TO_BUFF_OFFSET &&
+            solar >= SOLAR_ENABLE_MIN_TEMP // Solarpanel muss min 40°C haben, weil die B-Formel exponentiell ist. Bei der anpassung in Matlab kann man sehen, dass die Steigung zu gering ist um temperaturen < 40°C damit zu messen.
+        ){
             ESP_LOGI(SOLARTAG,"Solarpumpe einschalten.");
             gpio_set_level(PUMP_SOLAR_GPIO,PUMP_ON);
             blocker = SOLAR_BLOCK_CYCLE_AFTER_ENABLE;
