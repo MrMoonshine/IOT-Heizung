@@ -8,7 +8,7 @@ uint8_t solarSetByTemp(float solar, float buffer, float vorlauf, float rucklauf)
         solar       < ZERO_KELVIN ||    //Solar is Analog. No error occured here, but it's still wrong.
         buffer      < ZERO_KELVIN ||
         rucklauf    < ZERO_KELVIN ||
-        vorlauf     < ZERO_KELVIN ||
+        vorlauf     < ZERO_KELVIN
     ){
         ESP_LOGW(SOLARTAG,"Ungültige Messwerte! Solarpumpe bleibt im gleichen Zustand");
         return blocker;
