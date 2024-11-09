@@ -256,7 +256,7 @@ void app_main(){
         GPIO_ONE_WIRE,
         RMT_CHANNEL_1,
         RMT_CHANNEL_0
-    ); 
+    );
     ESP_LOGI(TAG, "One-Wire Bus wird konfiguriert...");
     tempDoSettings(owb);
     ESP_LOGI(TAG, "Starte Sensoren...");

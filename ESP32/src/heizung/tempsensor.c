@@ -152,7 +152,7 @@ static bool tempVerify(OneWireBus *bus, OneWireBus_ROMCode *dev){
 */
 static float tempReadSensor(DS18B20_Info *info){
     float temperature = TEMPERATURE_FAIL;
-    if(!info->bus || !&info->rom_code){
+    if(!info->bus /*|| !&info->rom_code*/){
         ESP_LOGW(TAG,"DS info ist NULL");
         return temperature;
     }else if(!tempVerify((OneWireBus*)info->bus,&info->rom_code)){
@@ -250,7 +250,7 @@ void tempDoSettings(OneWireBus *owb){
     if (parasitic_power) {
         printf("Parasitic-powered devices detected\n");
     }
-
+    ESP_LOGI(TAG, "Parasitic power is %sabled", parasitic_power ? "en" : "dis");
     owb_use_parasitic_power(owb, parasitic_power);
 #ifdef CONFIG_ENABLE_STRONG_PULLUP_GPIO
     // An external pull-up circuit is used to supply extra current to OneWireBus devices
@@ -293,7 +293,7 @@ static const adc_unit_t unit = ADC_UNIT_1;
 static const adc_atten_t atten = ADC_ATTEN_DB_11;
 static const unsigned short adc_read_len = 128;
 //GPIO 36
-static const adc_channel_t channel = ADC1_CHANNEL_0;
+static const adc_channel_t channel = ADC_CHANNEL_0; // it used to be ADC1_CHANNEL_0 with old lib
 static adc_continuous_handle_t adc_handle;
 
 int tempGetRt(uint32_t* v_i, int* Rt_i){
