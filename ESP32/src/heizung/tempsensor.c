@@ -302,9 +302,6 @@ static void payloadtof(char* payload, float* thermocouple, float* cj){
 
 static esp_err_t solar_api_event_handler(esp_http_client_event_t *evt)
 {
-    /*char *buffer;
-    size_t bufferLen = 0;*/
-
     switch (evt->event_id)
     {
     case HTTP_EVENT_ERROR:
@@ -313,12 +310,6 @@ static esp_err_t solar_api_event_handler(esp_http_client_event_t *evt)
     case HTTP_EVENT_ON_CONNECTED:
         ESP_LOGI(TAG, "HTTP_EVENT_ON_CONNECTED");
         break;
-    /*case HTTP_EVENT_HEADER_SENT:
-        ESP_LOGD(TAG, "HTTP_EVENT_HEADER_SENT");
-        break;
-    case HTTP_EVENT_ON_HEADER:
-        ESP_LOGD(TAG, "HTTP_EVENT_ON_HEADER, key=%s, value=%s", evt->header_key, evt->header_value);
-        break;*/
     case HTTP_EVENT_ON_DATA:
         ESP_LOGI(TAG, "Got Data! Length: %u", evt->data_len);
         //ESP_LOGI(TAG, "%s", (char *)evt->user_data);
@@ -368,9 +359,11 @@ esp_err_t temp_rest_init()
 
 esp_err_t temp_rest_read()
 {
+    ESP_LOGI(TAG, "Reading Solar-Sensor...");
      esp_err_t err = esp_http_client_perform(client);
      if(err != ESP_OK){
-        ESP_LOGE(TAG, "%s\tHTTP Error: %d", TEMPSENSOR_SOLAR_URL , esp_http_client_get_status_code(client));
+        ESP_LOGE(TAG, "%s\tHTTP Error: %d\n", TEMPSENSOR_SOLAR_URL , esp_http_client_get_status_code(client));
+        return err;
      }
     return ESP_OK;
 }
