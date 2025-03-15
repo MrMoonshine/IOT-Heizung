@@ -12,8 +12,7 @@
 #include "nvs_flash.h"
 //#include "driver/adc.h"
 #include "driver/gpio.h"
-#include "esp_adc/adc_oneshot.h"
-#include "esp_adc/adc_continuous.h"
+#include "esp_http_client.h"
 #include "esp_system.h"
 #include "esp_log.h"
 #include "math.h"
@@ -23,6 +22,9 @@
 #define TEMPSENSOR_READ_INTERVAL 60
 // Max length of a sensor name
 #define TEMPSENSOR_NAME_LEN 8
+// IP of Solar Sensor
+#define TEMPSENSOR_SOLAR_IP "fd00:420::1e"
+#define TEMPSENSOR_SOLAR_URL ("http://[" TEMPSENSOR_SOLAR_IP "]/raw")
 
 typedef struct heizung_temperatur_t{
     char name[8];
@@ -64,18 +66,18 @@ heizung_temperatur_t* temp_owb_list();
 //alter the settings to fit the sensors
 void tempDoSettings(OneWireBus *owb);
 /*
-    @brief Analogen Sensor Lesen (Zum Glück gibts da nur die Solar ;) )
+  *  @brief Sensor via REST API
+  *  @return ESP_OK on success
 */
-void temp_analog_init();
+esp_err_t temp_rest_init();
 /*
-    @brief Analogen Sensor Lesen (Zum Glück gibts da nur die Solar ;) )
-    @param v Spannung am ADC in mV. NULL = ingnore
-    @param Rt Wiederstand am ADC. NULL = ingnore
-    @return Temperatur in °C
+ *   @brief Solar-Sensor via REST API lesen. Die werte werden in Volatile-Variablen gespeichert
+ *   @return ESP_OK on success
 */
-float temp_analog_read(uint32_t* v_i, int* Rt_i);
+esp_err_t temp_rest_read();
 /*
     @brief API Callback
 */
 esp_err_t heizung_api_temperatures(httpd_req_t *req);
-esp_err_t heizung_api_ntc(httpd_req_t *req);
+
+float temp_get_solar();
