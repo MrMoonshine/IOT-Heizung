@@ -22,9 +22,10 @@
 #define TEMPSENSOR_READ_INTERVAL 60
 // Max length of a sensor name
 #define TEMPSENSOR_NAME_LEN 8
+// Alpakagott Raspberry IP
+#define ALPAKAGOTT_IP "[fd00:420::1c10:c996:d63f:34a1]"
 // IP of Solar Sensor
-#define TEMPSENSOR_SOLAR_IP "fd00:420::1e"
-#define TEMPSENSOR_SOLAR_URL ("http://[" TEMPSENSOR_SOLAR_IP "]/raw")
+#define TEMPSENSOR_SOLAR_URL ("http://" ALPAKAGOTT_IP "/heizung/solarcache")
 
 typedef struct heizung_temperatur_t{
     char name[8];

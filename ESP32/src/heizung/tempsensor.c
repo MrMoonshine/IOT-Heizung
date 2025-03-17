@@ -326,7 +326,7 @@ static esp_err_t solar_api_event_handler(esp_http_client_event_t *evt)
         }
 
         memcpy(content, evt->data, contentLen);
-        //ESP_LOGI(TAG, "%s", content);
+        ESP_LOGI(TAG, "got content: %s", content);
         payloadtof(content, &solar_thermocouple, &solar_cold_junction);
         ESP_LOGI(TAG, "TC = %.2f", solar_thermocouple);
         ESP_LOGI(TAG, "CJ = %.2f", solar_cold_junction);
