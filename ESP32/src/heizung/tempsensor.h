@@ -24,6 +24,7 @@
 #define TEMPSENSOR_NAME_LEN 8
 // Alpakagott Raspberry IP
 #define ALPAKAGOTT_IP "10.0.0.160"
+#define SOLAR_IP "10.0.0.160"
 // IP of Solar Sensor
 #define TEMPSENSOR_SOLAR_URL ("http://" ALPAKAGOTT_IP "/heizung/solarcache")
 

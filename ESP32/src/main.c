@@ -34,7 +34,11 @@ static const char* TAG = "Heizung";
 /*---------------------------------------------------------*/
 /*              Variables for Pumps                        */
 /*---------------------------------------------------------*/
-volatile uint8_t blocker = 0;         //Anzahl der Aussetzer für die Solarpumpe
+//Anzahl der Aussetzer für die Solarpumpe
+volatile uint8_t blocker = 0;
+// Zähler der HTTP Errors. Nach 5 fhler am stück kommt ein EMERGENCY SHUTDOWN
+volatile uint8_t solarfailcount = 0;
+static const uint8_t SOLAR_FAIL_COUNT_EMERGENCY = 5;
 /*
     @brief ist die Solarpumpe im automatischen Betrieb?
 */
@@ -55,6 +59,7 @@ void heatact(void *args){
 /*              Temperaturen Messen                        */
 /*---------------------------------------------------------*/
     ESP_LOGI(TAG,"Messungen werden durchgeführt\nPumpStates:%d",pumpsRead());
+    temp_rest_init();
     // Read solar sensor. Is it valid?
     solar_valid = temp_rest_read() == ESP_OK;
     // Read OWB sensors
@@ -64,10 +69,15 @@ void heatact(void *args){
 /*---------------------------------------------------------*/
     if(blocker == 0 && solar_auto){
         if(!solar_valid){
-            // Turn off as Emergency!
-            ESP_LOGE(TAG, "EMERGENCY STOP SOLARPUMP!!!");
-            gpio_set_level(PUMP_SOLAR_GPIO,PUMP_OFF);
-            return;
+            solarfailcount++;
+            if(solarfailcount >= SOLAR_FAIL_COUNT_EMERGENCY){
+                // Turn off as Emergency!
+                ESP_LOGE(TAG, "EMERGENCY STOP SOLARPUMP!!!");
+                gpio_set_level(PUMP_SOLAR_GPIO,PUMP_OFF);
+                return;
+            }
+        }else{
+            solarfailcount = 0;
         }
         heizung_temperatur_t *temps = temp_owb_list();
         float tsolar_vorlauf = TEMPERATURE_FAIL, tsolar_rucklauf = TEMPERATURE_FAIL, tbuffer_vorlauf = TEMPERATURE_FAIL;
@@ -253,8 +263,8 @@ void app_main(){
     ESP_LOGI(TAG, "Starte Sensoren...");
     //Init All Sensors
     ESP_ERROR_CHECK_WITHOUT_ABORT(temp_owb_add_all(owb));
-    //Init Analog Temperature Meassurement
-    temp_rest_init();
+    //Init REST Temperature Meassurement
+    //temp_rest_init();
 
     //Give the Wifi some time to initialize
     vTaskDelay(4000 / portTICK_PERIOD_MS);
