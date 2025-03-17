@@ -23,7 +23,7 @@
 // Max length of a sensor name
 #define TEMPSENSOR_NAME_LEN 8
 // Alpakagott Raspberry IP
-#define ALPAKAGOTT_IP "[fd00:420::1c10:c996:d63f:34a1]"
+#define ALPAKAGOTT_IP "10.0.0.160"
 // IP of Solar Sensor
 #define TEMPSENSOR_SOLAR_URL ("http://" ALPAKAGOTT_IP "/heizung/solarcache")
 
