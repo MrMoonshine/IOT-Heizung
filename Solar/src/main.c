@@ -71,6 +71,7 @@ void universal_read(DS18B20_Info *info, float* temp, float* cj){
 esp_err_t rest_read(httpd_req_t *req, const char* pattern){
     // Flash blue onboard LED on API Call
     gpio_set_level(LED_ONBOARD, 1);
+    ESP_LOGI(TAG, "Reading temperature...");
 
     float tc = -2048.0f;
     float cj = -2048.0f;
@@ -82,6 +83,7 @@ esp_err_t rest_read(httpd_req_t *req, const char* pattern){
     size_t buffSize = strlen(pattern) + sizetc + sizecj + 1;    // +1 for \0
     char* buff = (char*)malloc(buffSize);
     if(buff == NULL){
+        ESP_LOGE(TAG, "malloc() error!");
         httpd_resp_send_500(req);
         return ESP_FAIL;
     }
@@ -90,9 +92,14 @@ esp_err_t rest_read(httpd_req_t *req, const char* pattern){
     // We're dealing with json probabbly
     if(buff[0] == '{')
         httpd_resp_set_type(req, "text/json");
+    else
+        httpd_resp_set_type(req, "text/plain");
 
+    ESP_LOGI(TAG, "Sending response...");
     httpd_resp_send(req, buff, strlen(buff));
     free(buff);
+
+    ESP_LOGI(TAG, "Done!");
     // Set LED back to off
     gpio_set_level(LED_ONBOARD, 0);
     return ESP_OK;
@@ -132,7 +139,6 @@ void app_main(){
     owb_rmt_driver_info rmtDriverInfo;
     OneWireBus *owb;
 
-    uint8_t counter = 0;
     gpio_reset_pin(LED_ONBOARD); 
     gpio_set_direction(LED_ONBOARD, GPIO_MODE_INPUT_OUTPUT);
 
