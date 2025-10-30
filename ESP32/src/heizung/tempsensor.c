@@ -327,11 +327,17 @@ static esp_err_t solar_api_event_handler(esp_http_client_event_t *evt)
 
         memcpy(content, evt->data, contentLen);
         ESP_LOGI(TAG, "got content: %s", content);
-        payloadtof(content, &solar_thermocouple, &solar_cold_junction);
+        payloadtof(content, (float*)&solar_thermocouple, (float*)&solar_cold_junction);
         ESP_LOGI(TAG, "TC = %.2f", solar_thermocouple);
         ESP_LOGI(TAG, "CJ = %.2f", solar_cold_junction);
 
         free(content);
+        break;
+    case HTTP_EVENT_ON_FINISH:
+        ESP_LOGI(TAG, "HTTP_EVENT_ON_FINISH");
+        break;
+    case HTTP_EVENT_DISCONNECTED:
+        ESP_LOGI(TAG, "HTTP_EVENT_DISCONNECTED");
         break;
     default:
         break;
@@ -346,7 +352,7 @@ esp_err_t temp_rest_init()
         .method = HTTP_METHOD_GET,
         .url = TEMPSENSOR_SOLAR_URL,
         .event_handler = solar_api_event_handler,
-        .is_async = true
+        .is_async = false
     };
     client = esp_http_client_init(&config);
     if (client == NULL)
@@ -368,11 +374,15 @@ esp_err_t temp_rest_read()
     return ESP_OK;
 }
 
+esp_err_t temp_rest_cleanup(){
+    return esp_http_client_cleanup(client);
+}
+
 static esp_err_t api_helper_ftoa(char *buffer, size_t bufferLen, const char *name, float value)
 {
     memset(buffer, 0, bufferLen);
     // To prevent a possible crash
-    sprintf(buffer, "\"%s\":%.2f,", name, abs(value) > 3000 ? TEMPERATURE_FAIL : value);
+    sprintf(buffer, "\"%s\":%.2f,", name, (float)(abs(value) > 3000 ? TEMPERATURE_FAIL : value));
     return ESP_OK;
 }
 

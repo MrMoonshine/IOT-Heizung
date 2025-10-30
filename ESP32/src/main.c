@@ -64,6 +64,12 @@ void heatact(void *args){
     solar_valid = temp_rest_read() == ESP_OK;
     // Read OWB sensors
     ESP_ERROR_CHECK_WITHOUT_ABORT(temp_owb_read_sensors());
+    
+    esp_err_t cleanuperror = temp_rest_cleanup();
+    if(cleanuperror != ESP_OK){
+        ESP_LOGW(TAG, "HTTP Client Cleanup error %s", esp_err_to_name(cleanuperror));
+    }
+    ESP_LOGI(TAG, "Messungen Fertig!");
 /*---------------------------------------------------------*/
 /*              Pumpen                                     */
 /*---------------------------------------------------------*/

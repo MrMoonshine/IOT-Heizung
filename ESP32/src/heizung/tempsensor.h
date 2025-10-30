@@ -68,7 +68,7 @@ heizung_temperatur_t* temp_owb_list();
 //alter the settings to fit the sensors
 void tempDoSettings(OneWireBus *owb);
 /*
-  *  @brief Sensor via REST API
+  *  @brief Init the client handle. (CLEANUP MUST BE DONE MANUALLY!!!)
   *  @return ESP_OK on success
 */
 esp_err_t temp_rest_init();
@@ -77,6 +77,8 @@ esp_err_t temp_rest_init();
  *   @return ESP_OK on success
 */
 esp_err_t temp_rest_read();
+
+esp_err_t temp_rest_cleanup();
 /*
     @brief API Callback
 */
